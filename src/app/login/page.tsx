@@ -9,7 +9,7 @@ export default function LoginPage() {
 
   useEffect(
     () => {
-      // destroyCookie(null, SESSION_COOKIE_NAME)
+      destroyCookie(null, SESSION_COOKIE_NAME)
     }, []
   )
 

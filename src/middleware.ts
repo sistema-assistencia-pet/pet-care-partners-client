@@ -17,6 +17,7 @@ export async function middleware(req: NextRequest) {
   const session = await validateSession()
 
   if (!session) return NextResponse.redirect(new URL('/login', req.url))
+  if (pathname === '/') return NextResponse.redirect(new URL('/painel', req.url))
 
   return NextResponse.next()
 }

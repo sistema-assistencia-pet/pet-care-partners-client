@@ -1,5 +1,7 @@
+import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -14,21 +16,38 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
 
+const loginSchema = z.object({
+  cpf: z
+    .string({ invalid_type_error: 'O CPF é obrigatório.'})
+    .length(11, 'O CPF deve ter 11 caracteres.'),
+  password: z
+    .string({ invalid_type_error: 'A senha é obrigatória.'})
+    .min(8, 'A senha deve ter pelo menos 8 caracteres.'),
+})
+
+type LoginSchema = z.infer<typeof loginSchema>
+
 export default function LoginForm() {
-  const [cpf, setCpf] = useState<string>('')
-  const [password, setPassword] = useState<string>('')
+  const {
+    formState: { errors, isValid },
+    handleSubmit,
+    register
+  } = useForm<LoginSchema>({
+    criteriaMode: 'all',
+    defaultValues: { cpf: '', password: '' },
+    mode: 'onBlur',
+    resolver: zodResolver(loginSchema),
+  })
 
-  const router = useRouter()
   const { signIn } = useAuth()
+  const { push } = useRouter()
 
-  const submitLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
+  const submitLogin = async ({ cpf, password }: LoginSchema) => {
     try {
       await signIn({ cpf, password })
-      router.push('/painel')
+      push('/painel/associados')
     } catch (error) {
-      router.push('/login')
+      push('/login')
     }
   }
 
@@ -38,34 +57,28 @@ export default function LoginForm() {
         <CardTitle>Farma4U</CardTitle>
         <CardDescription>Faça login para entrar no painel.</CardDescription>
       </CardHeader>
-      <form onSubmit={submitLogin}>
+
+      <form onSubmit={handleSubmit((data) => submitLogin(data))}>
         <CardContent>
           <div className="grid w-full items-center gap-4">
+
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="cpf">CPF</Label>
-              <Input
-                id="cpf"
-                name="cpf"
-                onChange={(event) => setCpf(event.target.value)}
-                required
-                value={cpf}
-              />
+              <Input { ...register("cpf") } type="text" />
+              {errors.cpf && <span className="text-red-500 text-xs">{errors.cpf.message}</span>}
             </div>
+
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                name="password"
-                onChange={(event) => setPassword(event.target.value)}
-                type="password"
-                required
-                value={password}
-              />
+              <Input { ...register("password") } type="password" />
+              {errors.password && <span className="text-red-500 text-xs">{errors.password.message}</span>}
             </div>
+
           </div>
         </CardContent>
+
         <CardFooter className="flex justify-center">
-          <Button type="submit">Entrar</Button>
+          <Button disabled={!isValid} type="submit">Entrar</Button>
         </CardFooter>
       </form>
     </Card>
