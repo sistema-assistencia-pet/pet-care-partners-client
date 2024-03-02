@@ -10,6 +10,7 @@ import UserCard from './UserCard'
 import { v4 as uuid } from 'uuid'
 import { Store, Users } from 'lucide-react'
 
+
 export default function Sidebar() {
   const commandListItems = [
     {
@@ -24,7 +25,7 @@ export default function Sidebar() {
   return (
     <aside className='w-60 min-w-60 border-r min-h-screen p-4 flex'>
       <nav className='flex flex-grow gap-4 flex-col'>
-        <UserCard name='Philippe Dias' />
+        <UserCard />
         <Command>
           <CommandList>
             {
@@ -32,7 +33,7 @@ export default function Sidebar() {
                 <CommandGroup heading={commandListItem.group} key={uuid()}>
                   {
                     commandListItem.items.map((commandItem) => (
-                      <CommandItem>
+                      <CommandItem key={uuid()}>
                         {commandItem.icon}
                         {commandItem.name}
                       </CommandItem>
