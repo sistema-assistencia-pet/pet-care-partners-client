@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import {
   Card,
   CardHeader,
-  CardTitle,
   CardDescription,
   CardContent,
   CardFooter,
@@ -17,6 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import logo from '../../../../public/logo-f4u-png.png'
 import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from "@/components/ui/use-toast"
 
 const loginSchema = z.object({
   cpf: z
@@ -40,6 +40,7 @@ export default function LoginForm() {
     mode: 'onBlur',
     resolver: zodResolver(loginSchema),
   })
+  const { toast } = useToast()
 
   const { signIn } = useAuth()
   const { push } = useRouter()
@@ -47,8 +48,18 @@ export default function LoginForm() {
   const submitLogin = async ({ cpf, password }: LoginSchema) => {
     try {
       await signIn({ cpf, password })
+
+      toast({
+        description: "Login efetuado com sucesso!"
+      })
+
       push('/painel/associados')
-    } catch (error) {
+    } catch (error: any) {
+      toast({
+        description: error?.message,
+        variant: "destructive"
+      })
+
       push('/login')
     }
   }

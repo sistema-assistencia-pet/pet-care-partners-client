@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
+import { useToast } from '@/components/ui/use-toast'
 
 interface IClient {
   id: string
@@ -86,6 +87,8 @@ export default function ClientsPage() {
     defaultValues: FORM_FILTER_DEFAULT_VALUES
   })
 
+  const { toast } = useToast()
+
   const handleNextPagination = () => {
     setSkip((prev) => prev + PAGINATION_LIMIT)
     setPage((prev) => prev + 1)
@@ -137,12 +140,26 @@ export default function ClientsPage() {
       method: 'GET',
     })
 
-    if (!response.error) {
-      const formattedClients = response.data.clients.map((client) => formatClient(client))
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
 
-      setClients(formattedClients)
-      setClientsCount(parseInt(response.headers[`x-total-count`]))
+      setClients([])
+      setClientsCount(0)
+
+      return
     }
+
+    toast({
+      description: response.message
+    })
+
+    const formattedClients = response.data.clients.map((client) => formatClient(client))
+
+    setClients(formattedClients)
+    setClientsCount(parseInt(response.headers[`x-total-count`]))
   }
 
   // Carrega lista de clientes
@@ -191,7 +208,7 @@ export default function ClientsPage() {
             Filtrar
           </Button>
           <Button
-            className="w-9 h-9 p-0"
+            className="min-w-9 h-9 p-0"
             onClick={resetFilter}
             title="Limpar filtros"
             type='button'

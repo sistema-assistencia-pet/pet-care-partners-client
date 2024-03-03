@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
-
+import { useToast } from '@/components/ui/use-toast'
 interface IMember {
   id: string
   client: {
@@ -95,6 +95,8 @@ export default function MembersPage() {
     defaultValues: FORM_FILTER_DEFAULT_VALUES
   })
 
+  const { toast } = useToast()
+
   const handleNextPagination = () => {
     setSkip((prev) => prev + PAGINATION_LIMIT)
     setPage((prev) => prev + 1)
@@ -150,12 +152,26 @@ export default function MembersPage() {
       method: 'GET',
     })
 
-    if (!response.error) {
-      const formattedMembers = response.data.members.map((member) => (formatMember(member)))
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
 
-      setMembers(formattedMembers)
-      setMembersCount(parseInt(response.headers[`x-total-count`]))
+      setMembers([])
+      setMembersCount(0)
+
+      return
     }
+
+    toast({
+      description: response.message
+    })
+
+    const formattedMembers = response.data.members.map((member) => (formatMember(member)))
+
+    setMembers(formattedMembers)
+    setMembersCount(parseInt(response.headers[`x-total-count`]))
   }
 
   // Carrega lista de associados
@@ -207,7 +223,7 @@ export default function MembersPage() {
             Filtrar
           </Button>
           <Button
-            className="w-9 h-9 p-0"
+            className="min-w-9 h-9 p-0"
             onClick={resetFilter}
             title="Limpar filtros"
             type='button'
