@@ -38,20 +38,20 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [])
 
   async function signIn({ cpf, password }: { cpf: string, password: string }): Promise<void> {
-    const response = await sendRequest<UserLogged>({
+    const response = await sendRequest<{ user: UserLogged }>({
       endpoint: '/auth/login-admin',
       method: 'POST',
-      data: { cpf, password },
+      data: { cpf: cpf.trim(), password: password.trim() },
     })
 
     if(response.error) throw new Error(response.message)
 
-    setUser(response.data)
+    setUser(response.data.user)
 
     const accessToken = response.headers['access-token']
 
     if (accessToken) {
-      await createSession(accessToken, response.data)
+      await createSession(accessToken, response.data.user)
 
       httpClient.interceptors.request.use((config) => {
         config.headers['Authorization'] = `Bearer ${accessToken}`

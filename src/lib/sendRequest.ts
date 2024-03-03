@@ -26,7 +26,7 @@ export const sendRequest = async <D>({
     })
 
     return {
-      data: response.data.user,
+      data: response.data,
       error: false,
       headers:response.headers,
       message: response.data.message,

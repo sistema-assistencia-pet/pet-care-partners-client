@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import LoginForm from './modules/login-form'
+import LoginForm from './modules/LoginForm'
 import { destroyCookie } from 'nookies'
 
 export default function LoginPage() {

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import logo from '../../../../public/logo-f4u-png.png'
 import { useAuth } from '@/contexts/AuthContext'
 
 const loginSchema = z.object({
@@ -54,7 +56,7 @@ export default function LoginForm() {
   return (
     <Card className="w-80">
       <CardHeader className="flex flex-col justify-center text-center">
-        <CardTitle>Farma4U</CardTitle>
+        <Image className="rounded-md px-2" src={logo} alt="Farma4U" />
         <CardDescription>Faça login para entrar no painel.</CardDescription>
       </CardHeader>
 
