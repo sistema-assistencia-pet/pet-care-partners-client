@@ -7,7 +7,9 @@ import { useEffect, useState } from 'react'
 import { applyCnpjMask, captalize, formatDate, removeCnpjMask } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
-import { DataTable } from './modules/DataTable'
+import { DataTable } from '../../../components/DataTable'
+import { FilterX } from 'lucide-react'
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
   Pagination,
@@ -26,9 +28,6 @@ import {
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import Link from 'next/link'
-import { FilterX } from 'lucide-react'
 
 interface IClient {
   id: string
@@ -78,8 +77,8 @@ const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
 export default function ClientsPage() {
   const [clients, setClients] = useState<IClient[]>([])
   const [clientsCount, setClientsCount] = useState<number>(0)
-  const [skip, setSkip] = useState(0)
-  const [page, setPage] = useState(1)
+  const [skip, setSkip] = useState<number>(0)
+  const [page, setPage] = useState<number>(1)
   const [query, setQuery] = useState<URLSearchParams | null>(null)
 
   const form = useForm<IFormValues>({
