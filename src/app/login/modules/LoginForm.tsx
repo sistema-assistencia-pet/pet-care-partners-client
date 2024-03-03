@@ -49,10 +49,6 @@ export default function LoginForm() {
     try {
       await signIn({ cpf, password })
 
-      toast({
-        description: "Login efetuado com sucesso!"
-      })
-
       push('/painel/associados')
     } catch (error: any) {
       toast({

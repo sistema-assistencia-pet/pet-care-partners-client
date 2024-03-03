@@ -8,7 +8,7 @@ import { applyCnpjMask, applyCpfMask, captalize, formatDate, removeCnpjMask, rem
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
-import { FilterX } from 'lucide-react'
+import { Eye, FilterX } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
@@ -29,6 +29,7 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
+import { useRouter } from 'next/navigation'
 interface IMember {
   id: string
   client: {
@@ -47,33 +48,6 @@ interface IFormValues {
   clientCnpj: string
   statusId: string
 }
-
-const columns: ColumnDef<IMember>[] = [
-  {
-    header: `CPF`,
-    accessorKey: `cpf`
-  },
-  {
-    header: `Nome`,
-    accessorKey: `name`
-  },
-  {
-    header: `CNPJ do Cliente`,
-    accessorKey: `client.cnpj`
-  },
-  {
-    header: `Nome Fantasia do Cliente`,
-    accessorKey: `client.fantasyName`
-  },
-  {
-    header: `Status`,
-    accessorKey: `status`
-  },
-  {
-    header: `Criado em`,
-    accessorKey: `createdAt`
-  }
-]
 
 const PAGINATION_LIMIT = 10
 const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
@@ -94,8 +68,50 @@ export default function MembersPage() {
     mode: 'onSubmit',
     defaultValues: FORM_FILTER_DEFAULT_VALUES
   })
-
+  const { push } = useRouter()
   const { toast } = useToast()
+
+  const columns: ColumnDef<IMember>[] = [
+    {
+      header: `CPF`,
+      accessorKey: `cpf`
+    },
+    {
+      header: `Nome`,
+      accessorKey: `name`
+    },
+    {
+      header: `CNPJ do Cliente`,
+      accessorKey: `client.cnpj`
+    },
+    {
+      header: `Nome Fantasia do Cliente`,
+      accessorKey: `client.fantasyName`
+    },
+    {
+      header: `Status`,
+      accessorKey: `status`
+    },
+    {
+      header: `Criado em`,
+      accessorKey: `createdAt`
+    },
+    {
+      header: `Ações`,
+      accessorKey: `id`,
+      cell: ({ row: { original: { id } } }) => (
+        <Button
+          className=''
+          onClick={() => push(`/painel/associados/${id}`)}
+          size="icon"
+          title="Visualizar Detalhes"
+          variant="outline"
+        >
+          <Eye />
+        </Button>
+      )
+    }
+  ]
 
   const handleNextPagination = () => {
     setSkip((prev) => prev + PAGINATION_LIMIT)
@@ -164,10 +180,6 @@ export default function MembersPage() {
       return
     }
 
-    toast({
-      description: response.message
-    })
-
     const formattedMembers = response.data.members.map((member) => (formatMember(member)))
 
     setMembers(formattedMembers)
@@ -182,10 +194,10 @@ export default function MembersPage() {
   }, [skip])
 
   return (
-    <DashboardLayout title="Associados" counterText={`Total: ${membersCount} associados`}>
+    <DashboardLayout title="Associados" secondaryText={`Total: ${membersCount} associados`}>
       <Form { ...form }>
         <form
-          className='flex flex-row my-4 gap-4'
+          className='flex flex-row gap-4'
           onSubmit={form.handleSubmit((data) => submitFilter(data))}
         >
           <div className="flex flex-col grow space-y-1.5 bg-white">
@@ -236,7 +248,7 @@ export default function MembersPage() {
 
       <DataTable columns={columns} data={members} />
 
-      <Pagination className="my-4">
+      <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationLink

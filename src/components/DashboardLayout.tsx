@@ -2,21 +2,21 @@
 
 interface DashBoradLayoutProps {
   children?: React.ReactNode
-  counterText?: string
+  secondaryText?: string
   title: string
 }
 
-export default function DashboardLayout({ children, counterText, title }: DashBoradLayoutProps) {
+export default function DashboardLayout({ children, secondaryText, title }: DashBoradLayoutProps) {
   return (
-    <div className="flex flex-col p-8 w-full h-full">
+    <div className="flex flex-col gap-8 px-8 py-12 w-full h-full">
       <div className='flex flex-row gap-8 justify-between w-full'>
-        <h1 className="text-2xl mb-4 font-bold">{title}</h1>
+        <h1 className="text-2xl font-bold">{title}</h1>
         {
-          counterText && (
+          secondaryText && (
             <div
-              className="cursor-default text-center font-semibold py-2"
+              className="cursor-default text-center font-semibold py-2 border rounded-md px-8"
             >
-              {counterText}
+              {secondaryText}
             </div>
           )
         }

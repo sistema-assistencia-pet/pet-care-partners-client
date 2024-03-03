@@ -4,7 +4,7 @@ export default function Layout({
   children: React.ReactNode
 }>) {
   return (
-      <div className={`flex items-start justify-between`}>
+      <div className={`flex items-start justify-between w-full`}>
         {children}
       </div>
   )

@@ -8,7 +8,7 @@ import { applyCnpjMask, captalize, formatDate, removeCnpjMask } from '@/lib/util
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
-import { FilterX } from 'lucide-react'
+import { Eye, FilterX } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
@@ -29,6 +29,7 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
+import { useRouter } from 'next/navigation'
 
 interface IClient {
   id: string
@@ -44,29 +45,6 @@ interface IFormValues {
   fantasyName: string
   statusId: string
 }
-
-const columns: ColumnDef<IClient>[] = [
-  {
-    header: `CNPJ`,
-    accessorKey: `cnpj`
-  },
-  {
-    header: `Nome Fantasia`,
-    accessorKey: `fantasyName`
-  },
-  {
-    header: `Segmento`,
-    accessorKey: `segment`
-  },
-  {
-    header: `Status`,
-    accessorKey: `status`
-  },
-  {
-    header: `Criado em`,
-    accessorKey: `createdAt`
-  }
-]
 
 const PAGINATION_LIMIT = 10
 const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
@@ -86,8 +64,46 @@ export default function ClientsPage() {
     mode: 'onSubmit',
     defaultValues: FORM_FILTER_DEFAULT_VALUES
   })
-
+  const { push } = useRouter()
   const { toast } = useToast()
+
+  const columns: ColumnDef<IClient>[] = [
+    {
+      header: `CNPJ`,
+      accessorKey: `cnpj`,
+    },
+    {
+      header: `Nome Fantasia`,
+      accessorKey: `fantasyName`
+    },
+    {
+      header: `Segmento`,
+      accessorKey: `segment`
+    },
+    {
+      header: `Status`,
+      accessorKey: `status`
+    },
+    {
+      header: `Criado em`,
+      accessorKey: `createdAt`
+    },
+    {
+      header: `Ações`,
+      accessorKey: `id`,
+      cell: ({ row: { original: { id } } }) => (
+        <Button
+          className=''
+          onClick={() => push(`/painel/clientes/${id}`)}
+          size="icon"
+          title="Visualizar Detalhes"
+          variant="outline"
+        >
+          <Eye />
+        </Button>
+      )
+    }
+  ]
 
   const handleNextPagination = () => {
     setSkip((prev) => prev + PAGINATION_LIMIT)
@@ -152,10 +168,6 @@ export default function ClientsPage() {
       return
     }
 
-    toast({
-      description: response.message
-    })
-
     const formattedClients = response.data.clients.map((client) => formatClient(client))
 
     setClients(formattedClients)
@@ -170,12 +182,13 @@ export default function ClientsPage() {
   }, [skip])
 
   return (
-    <DashboardLayout title="Clientes" counterText={`Total: ${clientsCount} clientes`}>
+    <DashboardLayout title="Clientes" secondaryText={`Total: ${clientsCount} clientes`}>
       <Form { ...form }>
         <form
-          className='flex flex-row my-4 gap-4'
+          className='flex flex-row gap-4'
           onSubmit={form.handleSubmit((data) => submitFilter(data))}
         >
+          <Button type="button" onClick={() => push('/painel/clientes/cadastrar-cliente')}>Cadastrar cliente</Button>
           <div className="flex flex-col grow space-y-1.5 bg-white">
             <Input { ...form.register("cnpj") } placeholder="CNPJ" type="text" />
           </div>
@@ -221,7 +234,7 @@ export default function ClientsPage() {
 
       <DataTable columns={columns} data={clients} />
 
-      <Pagination className="my-4">
+      <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationLink

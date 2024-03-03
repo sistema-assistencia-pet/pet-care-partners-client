@@ -26,8 +26,8 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className='w-60 min-w-60 border-r min-h-screen p-4 flex flex-grow flex-col bg-white'>
-      <nav className='flex flex-grow gap-8 flex-col'>
+    <aside className="w-60 min-w-60 border-r min-h-screen p-4 flex flex-grow flex-col bg-white fixed">
+      <nav className="flex flex-grow gap-8 flex-col">
         <UserCard />
         <Command>
           <CommandList>
