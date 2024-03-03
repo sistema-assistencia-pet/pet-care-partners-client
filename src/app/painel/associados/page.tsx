@@ -132,6 +132,18 @@ export default function MembersPage() {
     fetchMembers()
   }
 
+  const formatMember = (member: { statusId: number } & Omit<IMember, 'status'>) => ({
+    ...member,
+    cpf: applyCpfMask(member.cpf),
+    client: {
+      cnpj: applyCnpjMask(member.client.cnpj),
+      fantasyName: captalize(member.client.fantasyName)
+    },
+    name: captalize(member.name),
+    createdAt: formatDate(member.createdAt),
+    status: STATUS[member.statusId]
+  })
+
   const fetchMembers = async (query?: URLSearchParams) => {
     const response = await sendRequest<{ members: Array<{ statusId: number } & Omit<IMember, 'status'>> }>({
       endpoint: `/member?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
@@ -139,17 +151,7 @@ export default function MembersPage() {
     })
 
     if (!response.error) {
-      const formattedMembers = response.data.members.map(({ cpf, name, client, createdAt, statusId, ...member }) => ({
-        cpf: applyCpfMask(cpf),
-        name: captalize(name),
-        client: {
-          cnpj: applyCnpjMask(client.cnpj),
-          fantasyName: applyCnpjMask(client.fantasyName)
-        },
-        createdAt: formatDate(createdAt),
-        status: STATUS[statusId],
-        ...member
-      }))
+      const formattedMembers = response.data.members.map((member) => (formatMember(member)))
 
       setMembers(formattedMembers)
       setMembersCount(parseInt(response.headers[`x-total-count`]))

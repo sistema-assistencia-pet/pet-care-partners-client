@@ -51,7 +51,7 @@ export default function Sidebar() {
         </Command>
       </nav>
 
-      <Image className="rounded-md px-2" src={logo} alt="Farma4U" />
+      <Image className="rounded-md px-2" src={logo} alt="Farma4U" priority />
     </aside>
   )
 }

@@ -122,6 +122,15 @@ export default function ClientsPage() {
     fetchClients()
   }
 
+  const formatClient = (client: { statusId: number } & Omit<IClient, 'status'>) => ({
+    ...client,
+    cnpj: applyCnpjMask(client.cnpj),
+    fantasyName: captalize(client.fantasyName),
+    segment: captalize(client.segment),
+    createdAt: formatDate(client.createdAt),
+    status: STATUS[client.statusId],
+  })
+
   const fetchClients = async (query?: URLSearchParams) => {
     const response = await sendRequest<{ clients: Array<{ statusId: number } & Omit<IClient, 'status'>> }>({
       endpoint: `/client?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
@@ -129,14 +138,7 @@ export default function ClientsPage() {
     })
 
     if (!response.error) {
-      const formattedClients = response.data.clients.map(({ cnpj, fantasyName, segment, createdAt, statusId, ...client }) => ({
-        cnpj: applyCnpjMask(cnpj),
-        fantasyName: captalize(fantasyName),
-        segment: captalize(segment),
-        createdAt: formatDate(createdAt),
-        status: STATUS[statusId],
-        ...client
-      }))
+      const formattedClients = response.data.clients.map((client) => formatClient(client))
 
       setClients(formattedClients)
       setClientsCount(parseInt(response.headers[`x-total-count`]))
