@@ -233,6 +233,7 @@ export default function ClientDetailsPage() {
             Cadastrar Associados em Lote
           </Label>
           <Input
+            accept=".csv"
             disabled={clientDetailed?.status !== STATUS[1]}
             className="hidden"
             id="file-input"
