@@ -132,7 +132,7 @@ export default function MembersPage() {
     const { cpf, name, clientCnpj, statusId } = data
     const query = new URLSearchParams()
 
-    const clientCnpjWithoutMask = removeCnpjMask(clientCnpj.trim())
+    const clientCnpjWithoutMask = removeCnpjMask(clientCnpj)
 
     if (cpf) query.append('cpf', cpf)
     if (name) query.append('name', name)

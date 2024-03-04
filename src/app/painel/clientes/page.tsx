@@ -125,8 +125,10 @@ export default function ClientsPage() {
     const { cnpj, fantasyName, statusId } = data
     const query = new URLSearchParams()
 
-    if (cnpj) query.append('cnpj', removeCnpjMask(cnpj.trim()))
-    if (fantasyName) query.append('fantasy-name', fantasyName.trim())
+    const cnpjWithoutMask = removeCnpjMask(cnpj)
+
+    if (cnpj) query.append('cnpj', cnpjWithoutMask)
+    if (fantasyName) query.append('fantasy-name', fantasyName)
     if (statusId) query.append('status-id', statusId)
 
     setQuery(query)
