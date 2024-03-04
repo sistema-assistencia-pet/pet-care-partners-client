@@ -4,7 +4,7 @@ import { FieldValues, useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
 
-import { applyCnpjMask, captalize, formatDate, removeCnpjMask } from '@/lib/utils'
+import { applyCnpjMask, captalize, formatCurrency, formatDateTime, removeCnpjMask } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
@@ -56,6 +56,7 @@ const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
 export default function ClientsPage() {
   const [clients, setClients] = useState<IClient[]>([])
   const [clientsCount, setClientsCount] = useState<number>(0)
+  const [systemTotalSavings, setSystemTotalSavings] = useState<string>(formatCurrency(0))
   const [skip, setSkip] = useState<number>(0)
   const [page, setPage] = useState<number>(1)
   const [query, setQuery] = useState<URLSearchParams | null>(null)
@@ -146,12 +147,14 @@ export default function ClientsPage() {
     cnpj: applyCnpjMask(client.cnpj),
     fantasyName: captalize(client.fantasyName),
     segment: captalize(client.segment),
-    createdAt: formatDate(client.createdAt),
+    createdAt: formatDateTime(client.createdAt),
     status: STATUS[client.statusId],
   })
 
   const fetchClients = async (query?: URLSearchParams) => {
-    const response = await sendRequest<{ clients: Array<{ statusId: number } & Omit<IClient, 'status'>> }>({
+    const response = await sendRequest<
+      { clients: Array<Omit<IClient, 'status'> & { statusId: number }>, systemTotalSavings: number }
+    >({
       endpoint: `/client?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
       method: 'GET',
     })
@@ -164,6 +167,7 @@ export default function ClientsPage() {
 
       setClients([])
       setClientsCount(0)
+      setSystemTotalSavings(formatCurrency(0))
 
       return
     }
@@ -172,6 +176,7 @@ export default function ClientsPage() {
 
     setClients(formattedClients)
     setClientsCount(parseInt(response.headers[`x-total-count`]))
+    setSystemTotalSavings(formatCurrency(response.data.systemTotalSavings))
   }
 
   // Carrega lista de clientes
@@ -182,7 +187,11 @@ export default function ClientsPage() {
   }, [skip])
 
   return (
-    <DashboardLayout title="Clientes" secondaryText={`Total: ${clientsCount} clientes`}>
+    <DashboardLayout
+      secondaryText={`Total: ${clientsCount} clientes`}
+      systemTotalSavingsText={`Economia total do sistema: ${systemTotalSavings}`}
+      title="Clientes"
+    >
       <Form { ...form }>
         <form
           className='flex flex-row gap-4'

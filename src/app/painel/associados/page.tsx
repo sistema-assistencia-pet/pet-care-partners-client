@@ -4,7 +4,7 @@ import { FieldValues, useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
 
-import { applyCnpjMask, applyCpfMask, captalize, formatDate, removeCnpjMask, removeCpfMask } from '@/lib/utils'
+import { applyCnpjMask, applyCpfMask, captalize, formatDateTime, removeCnpjMask, removeCpfMask } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
@@ -158,7 +158,7 @@ export default function MembersPage() {
       fantasyName: captalize(member.client.fantasyName)
     },
     name: captalize(member.name),
-    createdAt: formatDate(member.createdAt),
+    createdAt: formatDateTime(member.createdAt),
     status: STATUS[member.statusId]
   })
 

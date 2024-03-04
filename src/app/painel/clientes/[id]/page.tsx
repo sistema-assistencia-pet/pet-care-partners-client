@@ -18,7 +18,7 @@ import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 import { useParams, useRouter } from 'next/navigation'
-import { applyCnpjMask, captalize, formatCurrency, formatDate, formatPhoneNumber } from '@/lib/utils'
+import { applyCnpjMask, captalize, formatCurrency, formatDateTime, formatPhoneNumber } from '@/lib/utils'
 import { DetailsField, DetailsRow } from '@/components/DetailsField'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
@@ -44,7 +44,7 @@ interface IClientDetailed {
   createdAt: string
 }
 
-type ICLientDetailedFromAPI = Omit<IClientDetailed, 'lumpSum' | 'unitValue' | 'totalSavings' | 'statusId'> & { lumpSum: number, unitValue: number, totalSavings: number, statusId: number }
+type CLientDetailedFromAPI = Omit<IClientDetailed, 'lumpSum' | 'unitValue' | 'totalSavings' | 'status'> & { lumpSum: number, unitValue: number, totalSavings: number, statusId: number }
 
 export default function ClientDetailsPage() {
   const [clientDetailed, setClientDetailed] = useState<IClientDetailed | null>(null)
@@ -52,7 +52,7 @@ export default function ClientDetailsPage() {
   const { push } = useRouter()
   const { toast } = useToast()
 
-  const formatClientDetailed = (client: ICLientDetailedFromAPI) => ({
+  const formatClientDetailed = (client: CLientDetailedFromAPI) => ({
     ...client,
     cnpj: applyCnpjMask(client.cnpj),
     corporateName: captalize(client.corporateName),
@@ -68,11 +68,11 @@ export default function ClientDetailsPage() {
     unitValue: client.unitValue === 0 ? '-' : formatCurrency(client.unitValue),
     totalSavings: formatCurrency(client.totalSavings),
     status: STATUS[client.statusId],
-    createdAt: formatDate(client.createdAt)
+    createdAt: formatDateTime(client.createdAt)
   })
 
   const fetchClient = async (id: string) => {
-    const response = await sendRequest<{ client: ICLientDetailedFromAPI }>({
+    const response = await sendRequest<{ client: CLientDetailedFromAPI }>({
       endpoint: `/client/${id}`,
       method: 'GET',
     })
@@ -189,10 +189,10 @@ export default function ClientDetailsPage() {
           {
             clientDetailed?.status === STATUS[1] && (
               <AlertDialog>
-                <AlertDialogTrigger className='px-8 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
+                <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>
+                    <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Todos os associados do cliente também serão inativados!
                     </AlertDialogDescription>
@@ -203,7 +203,7 @@ export default function ClientDetailsPage() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <Button onClick={() => inactivateClient(clientDetailed.id)}>
-                    Inativar
+                      Inativar
                     </Button>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -213,7 +213,7 @@ export default function ClientDetailsPage() {
           {
             clientDetailed?.status === STATUS[2] && (
               <AlertDialog>
-                <AlertDialogTrigger className='px-8 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
+                <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>
@@ -239,7 +239,7 @@ export default function ClientDetailsPage() {
             && [STATUS[1], STATUS[2]].includes(clientDetailed.status as string)
             && (
               <AlertDialog>
-                <AlertDialogTrigger className='rounded-md px-8 bg-destructive text-white'>Excluir</AlertDialogTrigger>
+                <AlertDialogTrigger className='rounded-md px-8 h-9 bg-destructive text-white'>Excluir</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
