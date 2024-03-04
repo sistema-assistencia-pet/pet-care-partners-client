@@ -5,8 +5,7 @@ import axios from 'axios'
 import { parseCookies } from 'nookies'
 
 export const httpClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' }
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL
 })
 
 const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME as string

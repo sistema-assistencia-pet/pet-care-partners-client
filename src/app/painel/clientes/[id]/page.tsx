@@ -22,6 +22,8 @@ import { applyCnpjMask, captalize, formatCurrency, formatDateTime, formatPhoneNu
 import { DetailsField, DetailsRow } from '@/components/DetailsField'
 import { Separator } from '@/components/ui/separator'
 import Link from 'next/link'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface IClientDetailed {
   id: string
@@ -48,6 +50,7 @@ type CLientDetailedFromAPI = Omit<IClientDetailed, 'lumpSum' | 'unitValue' | 'to
 
 export default function ClientDetailsPage() {
   const [clientDetailed, setClientDetailed] = useState<IClientDetailed | null>(null)
+  const [fileSelected, setFileSelected] = useState<File | null>(null)
   const params = useParams()
   const { push } = useRouter()
   const { toast } = useToast()
@@ -162,6 +165,56 @@ export default function ClientDetailsPage() {
     fetchClient(id)
   }
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+
+    if (files && files.length > 0) {
+      const file = files[0]
+
+      if (file.type === "text/csv") {
+        setFileSelected(file)
+      } else {
+        toast({
+          description: "O arquivo selecionado não tem a extensão .csv",
+          variant: "destructive"
+        })
+        setFileSelected(null)
+      }
+    }
+  }
+
+  const sendCSVToCreateMembers = async (file: File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const response = await sendRequest({
+      endpoint: `/member/${params.id}/create-members-in-bulk`,
+      method: 'POST',
+      data: formData,
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+  
+  }
+
+  useEffect(() => {
+    if (fileSelected) {
+      sendCSVToCreateMembers(fileSelected)
+    }
+  }, [fileSelected])
+
   useEffect(() => {
     if (params.id) fetchClient(params.id as string)
   } , [params.id])
@@ -173,9 +226,21 @@ export default function ClientDetailsPage() {
     >
       <div className="flex justify-between w-full">
         <div className="flex gap-4">
-          <Button onClick={() => {}} disabled={clientDetailed?.status !== STATUS[1]}>
+          <Label
+            htmlFor="file-input"
+            className="bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+          >
             Cadastrar Associados em Lote
-          </Button>
+          </Label>
+          <Input
+            disabled={clientDetailed?.status !== STATUS[1]}
+            className="hidden"
+            id="file-input"
+            onChange={handleFileChange}
+            type="file"
+            multiple={false}
+            placeholder='Cadastrar Associados em Lote'
+          />
           <Button
             disabled={clientDetailed?.status !== STATUS[1]}
             onClick={() => push(`/painel/clientes/${params.id}/cadastrar-associado`)}
