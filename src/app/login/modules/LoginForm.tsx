@@ -20,10 +20,10 @@ import { useToast } from "@/components/ui/use-toast"
 
 const loginSchema = z.object({
   cpf: z
-    .string({ invalid_type_error: 'O CPF é obrigatório.'})
+    .string({ required_error: 'O CPF é obrigatório.'})
     .length(11, 'O CPF deve ter 11 caracteres.'),
   password: z
-    .string({ invalid_type_error: 'A senha é obrigatória.'})
+    .string({ required_error: 'A senha é obrigatória.'})
     .min(8, 'A senha deve ter pelo menos 8 caracteres.'),
 })
 
@@ -48,6 +48,8 @@ export default function LoginForm() {
   const submitLogin = async ({ cpf, password }: LoginSchema) => {
     try {
       await signIn({ cpf, password })
+
+      toast({ description: 'Login realizado com sucesso!' })
 
       push('/painel/associados')
     } catch (error: any) {
