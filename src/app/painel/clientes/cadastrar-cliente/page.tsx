@@ -1,14 +1,19 @@
 'use client'
 
-import { FieldValues, useForm } from 'react-hook-form'
-import { useState } from 'react'
+import CurrencyInput from 'react-currency-input-field'
+import InputMask from "react-input-mask"
+import { useForm } from 'react-hook-form'
+import { useRouter } from 'next/navigation'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 import { Button } from '@/components/ui/button'
-import CurrencyInput from 'react-currency-input-field'
 import DashboardLayout from '@/components/DashboardLayout'
+import { DetailsRow } from '@/components/DetailsRow'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import InputMask from "react-input-mask"
+import { InputContainer } from '@/components/InputContainer'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -19,13 +24,7 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { useParams, useRouter } from 'next/navigation'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { FilterX } from 'lucide-react'
-import { DetailsRow } from '@/components/DetailsRow'
-import { Label } from '@/components/ui/label'
-import { InputContainer } from '@/components/InputContainer'
+import { Backpack } from 'lucide-react'
 
 const newClientFormSchema = z.object({
   cnpj: z
@@ -100,24 +99,24 @@ const NEW_CLIENT_FORM_DEFAULT_VALUES: NewClientFormSchema = {
   statusId: STATUS.Ativo
 }
 
-export default function ClientDetailsPage() {
+export default function RegisterClient() {
   const form = useForm<NewClientFormSchema>({
     mode: 'onBlur',
     defaultValues: NEW_CLIENT_FORM_DEFAULT_VALUES,
     resolver: zodResolver(newClientFormSchema)
   })
 
-  const { push } = useRouter()
+  const { back } = useRouter()
   const { toast } = useToast()
 
   const formatNewClientData = (newClientData: NewClientFormSchema): NewClientFormSchema => ({
     ...newClientData,
     cnpj: newClientData.cnpj
-      .replaceAll('.', '').replace('/', '').replace('-', ''),
+      .replaceAll('.', '').replace('/', '').replace('-', '').replaceAll('_', ''),
     managerPhoneNumber: newClientData.managerPhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', ''),
+      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
     financePhoneNumber: newClientData.financePhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', ''),
+      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
   })
 
   const postClient = async (newClientData: NewClientFormSchema) => {
@@ -140,11 +139,11 @@ export default function ClientDetailsPage() {
       })
     }
 
-  push('/painel/clientes')
+  back()
   }
 
   return (
-    <DashboardLayout title="Cadastrar novo cliente">
+    <DashboardLayout title="Cadastrar Novo Cliente">
       <Form { ...form }>
         <form
           className='flex flex-col my-4 gap-4'
@@ -228,6 +227,7 @@ export default function ClientDetailsPage() {
                 allowNegativeValue={false}
                 fixedDecimalLength={2}
                 disableGroupSeparators={true}
+                placeholder="00.00"
               />
               {
                 form.formState.errors.lumpSum
@@ -242,6 +242,7 @@ export default function ClientDetailsPage() {
                 allowNegativeValue={false}
                 fixedDecimalLength={2}
                 disableGroupSeparators={true}
+                placeholder="00.00"
               />
               {
                 form.formState.errors.unitValue
@@ -336,7 +337,7 @@ export default function ClientDetailsPage() {
           </DetailsRow>
 
           <Button className="my-4" disabled={!form.formState.isValid} type='submit'>
-            Cadastrar Cliente
+            Cadastrar cliente
           </Button>
         </form>
       </Form>

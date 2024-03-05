@@ -287,7 +287,10 @@ export default function MemberDetailsPage() {
       title={`${memberDetailed?.name || ''}`}
     >
       <div className="flex justify-between w-full">
-        <Button onClick={() => {}}>
+        <Button
+          disabled={memberDetailed?.status !== STATUS[1]}
+          onClick={() => {push(`/painel/associados/${params.id as string}/cadastrar-pedido`)}}
+        >
           Cadastrar Pedido
         </Button>
 
@@ -295,7 +298,7 @@ export default function MemberDetailsPage() {
           {
             memberDetailed?.status === STATUS[1] && (
               <AlertDialog>
-                <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
+                <AlertDialogTrigger className='uppercase text-sm font-medium px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
@@ -316,7 +319,7 @@ export default function MemberDetailsPage() {
           {
             memberDetailed?.status === STATUS[2] && (
               <AlertDialog>
-                <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
+                <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>
@@ -339,7 +342,7 @@ export default function MemberDetailsPage() {
             && [STATUS[1], STATUS[2]].includes(memberDetailed.status as string)
             && (
               <AlertDialog>
-                <AlertDialogTrigger className='rounded-md px-8 h-9 bg-destructive text-white'>Excluir</AlertDialogTrigger>
+                <AlertDialogTrigger className='uppercase text-sm font-medium rounded-md px-8 h-9 bg-destructive text-white'>Excluir</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
@@ -404,7 +407,7 @@ export default function MemberDetailsPage() {
                         {
                           order?.status === STATUS[1] && (
                             <AlertDialog>
-                              <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
+                              <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
@@ -425,7 +428,7 @@ export default function MemberDetailsPage() {
                         {
                           order?.status === STATUS[2] && (
                             <AlertDialog>
-                              <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
+                              <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>

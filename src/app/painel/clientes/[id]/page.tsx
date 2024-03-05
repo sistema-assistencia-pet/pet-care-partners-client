@@ -229,7 +229,7 @@ export default function ClientDetailsPage() {
         <div className="flex gap-4">
           <Label
             htmlFor="file-input"
-            className="bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+            className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
           >
             Cadastrar Associados em Lote
           </Label>
@@ -256,7 +256,7 @@ export default function ClientDetailsPage() {
           {
             clientDetailed?.status === STATUS[1] && (
               <AlertDialog>
-                <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
+                <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
@@ -280,7 +280,7 @@ export default function ClientDetailsPage() {
           {
             clientDetailed?.status === STATUS[2] && (
               <AlertDialog>
-                <AlertDialogTrigger className='px-8 h-9 rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
+                <AlertDialogTrigger className='uppercase px-8 h-9 rounded-md text-sm font-medium border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>
@@ -306,7 +306,7 @@ export default function ClientDetailsPage() {
             && [STATUS[1], STATUS[2]].includes(clientDetailed.status as string)
             && (
               <AlertDialog>
-                <AlertDialogTrigger className='rounded-md px-8 h-9 bg-destructive text-white'>Excluir</AlertDialogTrigger>
+                <AlertDialogTrigger className='uppercase rounded-md px-8 h-9 text-sm font-medium bg-destructive text-white'>Excluir</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
