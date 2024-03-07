@@ -24,3 +24,22 @@ export const formatPhoneNumber = (phoneNumber: string): string => `(${phoneNumbe
 export const formatCurrency = (value: number): string => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
 export const applyCepMask = (cep: string): string => cep.slice(0, 6) + `-` + cep.slice(6, 8)
+
+export const applyCurrencyMaskReturningString = (value: string): string => {
+  return value.replace(/[^\d,]/g, '')
+}
+
+export const transformCurrencyStringToNumber = (value: string): number => {
+  return parseFloat(value.replace(',', '.'))
+}
+
+export const transformCurrencyNumberToString = (value: number): string => {
+  return value.toFixed(2).replace('.', ',')
+}
+
+export const validateCurrencyInput = (value: string): boolean => {
+  const splitted = value.split(',')
+  if (![1, 2].includes(splitted.length)) return false
+  if (splitted.length === 2 && ![1, 2].includes(splitted[1].length)) return false
+  return true
+}
