@@ -1,30 +1,32 @@
 'use client'
 
-import CurrencyInput from 'react-currency-input-field'
-import InputMask from "react-input-mask"
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { v4 as uuid } from 'uuid'
 
 import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  applyCurrencyMaskReturningString,
+  transformCurrencyNumberToString,
+  transformCurrencyStringToNumber,
+  validateCurrencyInput
+} from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DetailsRow } from '@/components/DetailsRow'
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { InputContainer } from '@/components/InputContainer'
 import { Label } from '@/components/ui/label'
+import { Minus, Plus } from 'lucide-react'
 import {
   Select,
   SelectContent,
@@ -35,70 +37,15 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { useEffect, useState } from 'react'
-import { Minus, Plus } from 'lucide-react'
-import { applyCurrencyMaskReturningString, transformCurrencyNumberToString, transformCurrencyStringToNumber, validateCurrencyInput } from '@/lib/utils'
-import { v4 as uuid } from 'uuid'
-import { Separator } from '@radix-ui/react-select'
 
-const newOrderItemFormSchema = z.object({
-  medicineName: z
-    .string({ required_error: 'O campo Nome do Medicamento é obrigatório.' })
-    .min(1, { message: 'O campo Nome do Medicamento deve ter pelo menos 1 caracter.' }),
-  medicineType: z
-    .string({ required_error: 'O campo Tipo do Medicamento é obrigatório.' })
-    .min(1, { message: 'O campo Tipo do Medicamento deve ter pelo menos 1 caracter.' }),
-  quantity: z.coerce
-    .number({
-      required_error: 'O campo Quantidade é obrigatório.',
-      invalid_type_error: 'O campo Quantidade deve ser um número.'
-    })
-    .gte(1, { message: 'O campo Quantidade deve ser maior ou igual a 1.' }),
-  listPrice: z
-    .number({
-      required_error: 'O campo Valor de Tabela é obrigatório.',
-      invalid_type_error: 'O campo Valor de Tabela deve ser um número.'
-    })
-    .gte(0, { message: 'O campo Valor de Tabela deve ser maior ou igual a 0.' }),
-  discountPrice: z
-    .number({
-      required_error: 'O campo Valor de Tabela é obrigatório.',
-      invalid_type_error: 'O campo Valor de Tabela deve ser um número.'
-    })
-    .gte(0, { message: 'O campo Valor de Tabela deve ser maior ou igual a 0.' }),
-})
-
-type NewOrderItemFormSchema = z.infer<typeof newOrderItemFormSchema>
-
-const newOrderFormSchema = z.object({
-  memberId: z
-    .string({ required_error: 'O campo ID do Associado é obrigatório.' })
-    .uuid({ message: 'O campo ID do Associado deve ser um UUID válido.' }),
-  statusId: z.coerce
-    .number({ required_error: 'O campo Status é obrigatório.' })
-    .gte(1, { message: 'O campo Status deve 1 (ativo), 2 (inativo) ou 3 (excluído).' })
-    .lte(3, { message: 'O campo Status deve 1 (ativo), 2 (inativo) ou 3 (excluído).' }),
-  totalValue: z.coerce
-    .number({
-      required_error: 'O campo Valor Total é obrigatório.',
-      invalid_type_error: 'O campo Valor Total deve ser um número.'
-    })
-    .gte(0, { message: 'O campo Valor Total deve ser maior ou igual a 0.' }),
-  totalSavings: z.coerce
-    .number({
-      required_error: 'O campo Economia Total é obrigatório.',
-      invalid_type_error: 'O campo Economia Total deve ser um número.'
-    })
-    .gte(0, { message: 'O campo Economia Total deve ser maior ou igual a 0.' }),
-  isRecurring: z.coerce
-    .boolean({ required_error: 'O campo Compra Recorrente é obrigatório.' }),
-  items: z.array(newOrderItemFormSchema)
-}).refine((fields) => fields.items.length > 0, {
-  path: ['items'],
-  message: 'Deve haver pelo menos um item no pedido.'
-})
-
-type NewOrderFormSchema = z.infer<typeof newOrderFormSchema>
+interface INewOrderForm {
+  memberId: string
+  statusId: number
+  totalValue: number
+  totalSavings: number
+  isRecurring: boolean
+  items: INewOrderItem[]
+}
 
 interface INewOrderItem {
   medicineName: string
@@ -114,23 +61,6 @@ interface INewOrder {
   totalSavings: number
   isRecurring: boolean
   items: INewOrderItem[]
-}
-
-const NEW_ITEM_FORM_DEFAULT_VALUES: NewOrderItemFormSchema = {
-  medicineName: '',
-  medicineType: '',
-  quantity: 1,
-  listPrice: 0,
-  discountPrice: 0
-}
-
-const NEW_ORDER_FORM_DEFAULT_VALUES: NewOrderFormSchema = {
-  memberId: '',
-  statusId: STATUS.Ativo,
-  totalValue: 0,
-  totalSavings: 0,
-  isRecurring: false,
-  items: []
 }
 
 export default function RegisterOrder() {
@@ -155,7 +85,7 @@ export default function RegisterOrder() {
   const postOrder = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const newOrderData: NewOrderFormSchema = {
+    const newOrderData: INewOrderForm = {
       memberId: params.id as string,
       statusId,
       isRecurring,
