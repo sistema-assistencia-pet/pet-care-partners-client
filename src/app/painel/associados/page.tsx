@@ -3,8 +3,9 @@
 import { FieldValues, useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-import { applyCnpjMask, applyCpfMask, captalize, formatDateTime, removeCnpjMask, removeCpfMask } from '@/lib/utils'
+import { applyCnpjMask, applyCpfMask, captalize, formatDateTime, removeCnpjMask } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
@@ -29,7 +30,6 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { useRouter } from 'next/navigation'
 interface IMember {
   id: string
   client: {

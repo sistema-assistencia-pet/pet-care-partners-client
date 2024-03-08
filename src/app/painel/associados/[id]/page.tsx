@@ -1,6 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { useParams, useRouter } from 'next/navigation'
+import { v4 as uuid } from 'uuid'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 
 import {
   Accordion,
@@ -20,16 +25,19 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
-import { sendRequest } from '@/lib/sendRequest'
-import { STATUS } from '@/lib/enums'
-import { useToast } from '@/components/ui/use-toast'
-import { useParams, useRouter } from 'next/navigation'
-import { applyCepMask, applyCnpjMask, applyCpfMask, captalize, formatCurrency, formatDate, formatDateTime, formatPhoneNumber } from '@/lib/utils'
+import { applyCepMask, applyCnpjMask, applyCpfMask, captalize, formatCurrency, formatBirthdate, formatDateTime, formatPhoneNumber } from '@/lib/utils'
 import { DetailsField } from '@/components/DetailsField'
 import { DetailsRow } from '@/components/DetailsRow'
+import { Form } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { InputContainer } from '@/components/InputContainer'
+import InputMask from "react-input-mask"
+import { Label } from '@/components/ui/label'
+import { Pencil, Trash2 } from 'lucide-react'
+import { sendRequest } from '@/lib/sendRequest'
 import { Separator } from '@/components/ui/separator'
-import Link from 'next/link'
-import { v4 as uuid } from 'uuid'
+import { STATUS } from '@/lib/enums'
+import { useToast } from '@/components/ui/use-toast'
 
 interface IItem {
   id: string
@@ -99,11 +107,50 @@ type MemberDetailedFromAPI = Omit<
   totalSavings: number,
 }
 
+const updateMemberFormSchema = z.object({
+  name: z
+    .string({ required_error: 'O campo Nome é obrigatório.' })
+    .min(3, {  message: 'O campo Nome deve ter pelo menos 3 caracteres.' })
+    .optional(),
+  email: z
+    .string({ required_error: 'O campo E-mail é obrigatório.' })
+    .email({ message: 'O campo E-mail deve ser um e-mail válido.' })
+    .optional(),
+  phoneNumber: z
+    .string({ required_error: 'O campo Telefone é obrigatório.' })
+    .min(11, { message: 'O campo Telefone deve ter pelo menos 11 caracteres.' })
+    .optional(),
+  birthDate: z
+    .string({ required_error: 'O campo Data de Nascimento é obrigatório.' })
+    .length(10, { message: 'O campo Data de Nascimento deve ter pelo menos 10 caracteres.' })
+    .optional(),
+  cep: z
+    .string({ required_error: 'O campo CEP é obrigatório.' })
+    .length(9, { message: 'O campo CEP deve ter pelo menos 9 caracteres.' })
+    .optional()
+})
+
+type UpdateMemberFormSchema = z.infer<typeof updateMemberFormSchema>
+
+const UPDATE_MEMBER_FORM_DEFAULT_VALUES: UpdateMemberFormSchema = {
+  name: '',
+  email: '',
+  phoneNumber: '',
+  birthDate: '',
+  cep: ''
+}
+
 export default function MemberDetailsPage() {
   const [memberDetailed, setMemberDetailed] = useState<IMemberDetailed | null>(null)
   const params = useParams()
   const { push } = useRouter()
   const { toast } = useToast()
+
+  const form = useForm<UpdateMemberFormSchema>({
+    mode: 'onBlur',
+    defaultValues: UPDATE_MEMBER_FORM_DEFAULT_VALUES,
+    resolver: zodResolver(updateMemberFormSchema)
+  })
 
   const formatMemberDetailed = (member: MemberDetailedFromAPI) => ({
     ...member,
@@ -114,7 +161,7 @@ export default function MemberDetailsPage() {
     cpf: applyCpfMask(member.cpf),
     name: captalize(member.name),
     phoneNumber: formatPhoneNumber(member.phoneNumber),
-    birthDate: formatDate(member.birthDate),
+    birthDate: formatBirthdate(member.birthDate),
     cep: applyCepMask(member.cep),
     totalSavings: formatCurrency(member.totalSavings),
     status: STATUS[member.statusId],
@@ -138,6 +185,14 @@ export default function MemberDetailsPage() {
     }))
   })
 
+  const fillUpdateForm = (member: MemberDetailedFromAPI) => {
+    form.setValue('name', member.name)
+    form.setValue('email', member.email)
+    form.setValue('phoneNumber', formatPhoneNumber(member.phoneNumber))
+    form.setValue('birthDate', formatBirthdate(member.birthDate))
+    form.setValue('cep', applyCepMask(member.cep))
+  }
+
   const fetchMember = async (id: string) => {
     const response = await sendRequest<{ member: MemberDetailedFromAPI }>({
       endpoint: `/member/${id}`,
@@ -155,11 +210,40 @@ export default function MemberDetailsPage() {
       return
     }
 
+    fillUpdateForm(response.data.member)
+
     const formattedMember = formatMemberDetailed(response.data.member)
 
-    console.log(formattedMember)
-
     setMemberDetailed(formattedMember)
+  }
+
+  const formatUpdatedMemberData = (memberData: UpdateMemberFormSchema): UpdateMemberFormSchema => ({
+    ...memberData,
+    birthDate: memberData.birthDate && memberData.birthDate.split('/').reverse().join('-').replaceAll('_', ''),
+    cep: memberData.cep && memberData.cep.replace('-', '').replaceAll('_', ''),
+    phoneNumber: memberData.phoneNumber && memberData.phoneNumber
+      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', '')
+  })
+
+  const updateMember = async (member: UpdateMemberFormSchema) => {
+    const formattedMember = formatUpdatedMemberData(member)
+
+    const response = await sendRequest<{ member: MemberDetailedFromAPI }>({
+      endpoint: `/member/${params.id}`,
+      method: 'PATCH',
+      data: formattedMember,
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    fetchMember(params.id as string)
   }
 
   const activateMember = async (id: string) => {
@@ -339,10 +423,97 @@ export default function MemberDetailsPage() {
           }
           {
             memberDetailed
+            && (
+              <AlertDialog>
+                <AlertDialogTrigger title='Editar' className='rounded-md w-9 h-9 bg-primary text-white flex flex-col justify-center'>
+                  <Pencil  className='mx-auto'/>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogTitle>Editar Associado</AlertDialogTitle>
+                  <AlertDialogDescription>
+                  <Form { ...form }>
+                    <form
+                      className='flex flex-col gap-4'
+                      onSubmit={form.handleSubmit((data) => updateMember(data))}
+                    >
+                      <DetailsRow>
+                        <InputContainer size="w-2/3">
+                          <Label htmlFor="name">Nome</Label>
+                          <Input className="bg-white" { ...form.register("name") } />
+                          {
+                            form.formState.errors.name
+                              && <span className="text-red-500 text-xs">{form.formState.errors.name.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="birthDate">Data de Nascimento</Label>
+                          <InputMask
+                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            mask="99/99/9999"
+                            { ...form.register("birthDate",) }
+                          />
+                          {
+                            form.formState.errors.birthDate
+                              && <span className="text-red-500 text-xs">{form.formState.errors.birthDate.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="email">E-mail</Label>
+                          <Input className="bg-white" { ...form.register("email") } />
+                          {
+                            form.formState.errors.email
+                              && <span className="text-red-500 text-xs">{form.formState.errors.email.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="phoneNumber">Telefone</Label>
+                          <InputMask
+                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            mask="(99) 99999-9999"
+                            { ...form.register("phoneNumber",) }
+                          />
+                          {
+                            form.formState.errors.phoneNumber
+                              && <span className="text-red-500 text-xs">{form.formState.errors.phoneNumber.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="cep">CEP</Label>
+                          <InputMask
+                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            mask="99999-999"
+                            { ...form.register("cep",) }
+                          />
+                          {
+                            form.formState.errors.cep
+                              && <span className="text-red-500 text-xs">{form.formState.errors.cep.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                        <Button type="submit" disabled={!form.formState.isValid}>
+                          Confirmar
+                        </Button>
+                      </AlertDialogFooter>
+                    </form>
+                  </Form>
+                  </AlertDialogDescription>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          }
+          {
+            memberDetailed
             && [STATUS[1], STATUS[2]].includes(memberDetailed.status as string)
             && (
               <AlertDialog>
-                <AlertDialogTrigger className='uppercase text-sm font-medium rounded-md px-8 h-9 bg-destructive text-white'>Excluir</AlertDialogTrigger>
+                <AlertDialogTrigger title='Excluir' className='rounded-md w-9 h-9 bg-destructive text-white flex flex-col justify-center'>
+                  <Trash2  className='mx-auto'/>
+                </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>

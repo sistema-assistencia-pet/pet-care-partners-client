@@ -1,8 +1,10 @@
 'use client'
 
-import { UserLogged } from '@/lib/interfaces'
 import axios from 'axios'
 import { parseCookies } from 'nookies'
+
+import { endSession } from './auth'
+import { UserLogged } from '@/lib/interfaces'
 
 export const httpClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL
@@ -17,8 +19,13 @@ const userStringfied: string | undefined = cookies[SESSION_COOKIE_NAME]
 if (userStringfied) {
   const user = JSON.parse(userStringfied) as UserLogged & { accessToken: string }
 
-  httpClient.interceptors.request.use((config) => {
-    config.headers['Authorization'] = `Bearer ${user.accessToken}`
-    return config
+  httpClient.interceptors.request.use((request) => {
+    request.headers['Authorization'] = `Bearer ${user.accessToken}`
+    return request
   })
 }
+
+httpClient.interceptors.response.use((response) => {
+  if (response.status === 401) endSession()
+  return response
+})

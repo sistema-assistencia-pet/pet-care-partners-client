@@ -1,18 +1,18 @@
 'use client'
 
-import CurrencyInput from 'react-currency-input-field'
-import InputMask from "react-input-mask"
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { Button } from '@/components/ui/button'
+import CurrencyInput from 'react-currency-input-field'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DetailsRow } from '@/components/DetailsRow'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { InputContainer } from '@/components/InputContainer'
+import InputMask from "react-input-mask"
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -24,7 +24,6 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { Backpack } from 'lucide-react'
 
 const newClientFormSchema = z.object({
   cnpj: z

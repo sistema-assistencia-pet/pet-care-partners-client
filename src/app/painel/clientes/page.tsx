@@ -3,6 +3,7 @@
 import { FieldValues, useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { applyCnpjMask, captalize, formatCurrency, formatDateTime, removeCnpjMask } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -29,7 +30,6 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { useRouter } from 'next/navigation'
 
 interface IClient {
   id: string

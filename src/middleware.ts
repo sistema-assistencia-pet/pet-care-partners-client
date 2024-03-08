@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest) {
   if(publicRoutes.includes(pathname)) {
     return NextResponse.next()
   }
-  
+
   const session = await validateSession()
 
   if (!session) return NextResponse.redirect(new URL('/login', req.url))

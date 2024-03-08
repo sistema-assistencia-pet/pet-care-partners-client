@@ -1,8 +1,8 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { jwtVerify } from 'jose'
 import { redirect } from 'next/navigation'
-import { type JWTPayload, jwtVerify } from 'jose'
 
 import { AccessTokenPayload, SessionData, UserLogged } from './interfaces'
 
@@ -50,16 +50,3 @@ export async function endSession(): Promise<void> {
 
   redirect('/login')
 }
-
-// export async function setAuthorizationHeader() {
-//   'use client'
-
-//   const sessionCookie = cookies().get(SESSION_COOKIE_NAME)
-
-//   if (sessionCookie) {
-//     httpClient.interceptors.request.use((config) => {
-//       config.headers['Authorization'] = `Bearer ${sessionCookie}`
-//       return config
-//     })
-//   }
-// }

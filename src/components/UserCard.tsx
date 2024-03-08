@@ -1,9 +1,10 @@
 'use client'
 
-import { endSession } from '@/lib/auth'
-import { Button } from './ui/button'
-import { useAuth } from '@/contexts/AuthContext'
 import { useEffect, useState } from 'react'
+
+import { Button } from './ui/button'
+import { endSession } from '@/lib/auth'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function UserCard() {
   const [userName, setUserName] = useState<string>('')

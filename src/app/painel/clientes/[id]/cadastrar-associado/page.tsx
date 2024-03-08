@@ -1,6 +1,6 @@
 'use client'
 
-import InputMask from "react-input-mask"
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useParams, useRouter } from 'next/navigation'
 import { z } from 'zod'
@@ -12,6 +12,7 @@ import { DetailsRow } from '@/components/DetailsRow'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { InputContainer } from '@/components/InputContainer'
+import InputMask from "react-input-mask"
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -23,7 +24,6 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { useEffect } from 'react'
 
 const newMemberFormSchema = z.object({
   cpf: z
