@@ -19,7 +19,7 @@ export const sendRequest = async <D>({
   method
 }: SendRequestParams): Promise<SuccessResponse<D> | FailResponse> => {
   try {
-    const response = await httpClient(endpoint, {
+    const response = await httpClient(`/api${endpoint}`, {
       data,
       headers,
       method,
