@@ -25,12 +25,6 @@ if (userStringfied) {
   })
 }
 
-httpClient.interceptors.request.use((request) => {
-  console.log('Request:', request)
-
-  return request
-})
-
 httpClient.interceptors.response.use((response) => {
   if (response.status === 401) endSession()
   return response

@@ -1,8 +1,9 @@
 'use client'
 
 import Image from 'next/image'
-import { v4 as uuid } from 'uuid'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { v4 as uuid } from 'uuid'
 
 import {
   Command,
@@ -15,6 +16,8 @@ import { Store, Users } from 'lucide-react'
 import UserCard from './UserCard'
 
 export default function Sidebar() {
+  const pathname = usePathname()
+
   const commandListItems = [
     {
       group: 'Sessões',
@@ -37,7 +40,7 @@ export default function Sidebar() {
                   {
                     commandListItem.items.map((commandItem) => (
                       <Link href={commandItem.link} key={uuid()} passHref={true}>
-                        <CommandItem className="mb-4 pl-4 gap-4">
+                        <CommandItem className={`mb-4 pl-4 gap-4 ${pathname.includes(commandItem.link) && 'bg-accent'}`}>
                           {commandItem.icon}
                           {commandItem.name}
                         </CommandItem>
