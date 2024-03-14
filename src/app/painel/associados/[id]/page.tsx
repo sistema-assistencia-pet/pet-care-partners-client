@@ -640,7 +640,7 @@ export default function MemberDetailsPage() {
                                 </DetailsRow>
 
                                 <DetailsRow>
-                                  <DetailsField label="Valor de Tabela" value={item.listPrice} />
+                                  <DetailsField label="Valor Unitário de Tabela" value={item.listPrice} />
                                   <DetailsField label="Valor com Desconto" value={item?.discountPrice} />
                                   <DetailsField label="Quantidade" value={item.quantity} />
                                 </DetailsRow>

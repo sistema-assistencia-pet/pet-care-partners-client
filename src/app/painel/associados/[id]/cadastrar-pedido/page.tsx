@@ -316,7 +316,7 @@ export default function RegisterOrder() {
                       <span>{item.quantity}</span>
                     </InputContainer>
                     <InputContainer size="w-1/3">
-                      <Label className="text-sm font-semibold" htmlFor="listPrice">Valor de Tabela</Label>
+                      <Label className="text-sm font-semibold" htmlFor="listPrice">Valor Unitário de Tabela</Label>
                       <span>R$ {transformCurrencyNumberToString(item.listPrice)}</span>
                     </InputContainer>
                     <InputContainer size="w-1/3">
@@ -400,7 +400,7 @@ export default function RegisterOrder() {
                     }
                   </InputContainer>
                   <InputContainer size="w-1/3">
-                    <Label htmlFor="listPrice">Valor de Tabela</Label>
+                    <Label htmlFor="listPrice">Valor Unitário de Tabela</Label>
                     <Input
                       className="bg-background"
                       id="listPrice"
