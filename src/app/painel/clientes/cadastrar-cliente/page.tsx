@@ -182,7 +182,31 @@ export default function RegisterClient() {
             </InputContainer>
             <InputContainer size="w-1/3">
               <Label htmlFor="segment">Segmento</Label>
-              <Input className="bg-white" { ...form.register("segment") } />
+              <FormField
+                control={form.control}
+                name="segment"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Proteção Veicular">Proteção Veicular</SelectItem>
+                        <SelectItem value="Telecom">Telecom</SelectItem>
+                        <SelectItem value="Plano Funerário">Plano Funerário</SelectItem>
+                        <SelectItem value="RH">RH</SelectItem>
+                        <SelectItem value="Sindicato">Sindicato</SelectItem>
+                        <SelectItem value="Associação">Associação</SelectItem>
+                        <SelectItem value="Clube de benefícios">Clube de benefícios</SelectItem>
+                        <SelectItem value="Outros">Outros</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
               {
                 form.formState.errors.segment
                   && <span className="text-red-500 text-xs">{form.formState.errors.segment.message}</span>
