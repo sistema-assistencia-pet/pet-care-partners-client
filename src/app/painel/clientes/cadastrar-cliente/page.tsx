@@ -24,6 +24,7 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
+import { transformCurrencyStringToNumber, formatCurrency, applyCurrencyMaskReturningString } from '@/lib/utils'
 
 const newClientFormSchema = z.object({
   cnpj: z
@@ -61,13 +62,15 @@ const newClientFormSchema = z.object({
     .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
     .min(11, { message: 'O campo Telefone do Financeiro deve ter pelo menos 11 caracteres.' }),
   lumpSum: z.coerce
-    .number({ required_error: 'O campo Valor Fixo é obrigatório.' })
-    .gte(0, { message: 'O campo Valor Fixo deve ser maior ou igual a 0.' })
-    .optional(),
+    .number({ required_error: 'O campo Valor do Boleto é obrigatório.' })
+    .gte(0, { message: 'O campo Valor do Boleto deve ser maior ou igual a 0.' })
+    .optional()
+    .transform(value => Math.floor(value || 0)),
   unitValue: z.coerce
     .number({ required_error: 'O campo Valor Unitário é obrigatório.' })
     .gte(0, { message: 'O campo Valor Unitário deve ser maior ou igual a 0.' })
-    .optional(),
+    .optional()
+    .transform(value => Math.floor(value || 0)),
   contractUrl: z
     .string({ required_error: 'O campo URL do Contrato é obrigatório.' })
     .url({ message: 'O campo URL do Contrato deve ser uma URL válida.' })
@@ -115,7 +118,7 @@ export default function RegisterClient() {
     managerPhoneNumber: newClientData.managerPhoneNumber
       .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
     financePhoneNumber: newClientData.financePhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
+      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', '')
   })
 
   const postClient = async (newClientData: NewClientFormSchema) => {
@@ -242,7 +245,7 @@ export default function RegisterClient() {
           </DetailsRow>
 
           <DetailsRow>
-            <InputContainer size="w-1/3">
+            {/* <InputContainer size="w-1/3">
               <Label htmlFor="lumpSum">Valor do Boleto</Label>
               <CurrencyInput
                 { ...form.register("lumpSum") }
@@ -256,8 +259,20 @@ export default function RegisterClient() {
                 form.formState.errors.lumpSum
                   && <span className="text-red-500 text-xs">{form.formState.errors.lumpSum.message}</span>
               }
-            </InputContainer>
+            </InputContainer> */}
             <InputContainer size="w-1/3">
+              <Label htmlFor="lumpSum">Valor do Boleto</Label>
+              <Input
+                className="bg-white"
+                type="number"
+                { ...form.register("lumpSum") }
+              />
+              {
+                form.formState.errors.lumpSum
+                  && <span className="text-red-500 text-xs">{form.formState.errors.lumpSum.message}</span>
+              }
+            </InputContainer>
+            {/* <InputContainer size="w-1/3">
               <Label htmlFor="unitValue">Valor Unitário</Label>
               <CurrencyInput
                 { ...form.register("unitValue") }
@@ -266,6 +281,18 @@ export default function RegisterClient() {
                 fixedDecimalLength={2}
                 disableGroupSeparators={true}
                 placeholder="00.00"
+              />
+              {
+                form.formState.errors.unitValue
+                  && <span className="text-red-500 text-xs">{form.formState.errors.unitValue.message}</span>
+              }
+            </InputContainer> */}
+            <InputContainer size="w-1/3">
+              <Label htmlFor="unitValue">Valor Unitário</Label>
+              <Input
+                className="bg-white"
+                type="number"
+                { ...form.register("unitValue") }
               />
               {
                 form.formState.errors.unitValue
