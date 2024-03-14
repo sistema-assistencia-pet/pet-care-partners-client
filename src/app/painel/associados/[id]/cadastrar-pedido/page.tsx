@@ -261,6 +261,7 @@ export default function RegisterOrder() {
             <InputContainer  size="w-1/4">
               <Label htmlFor="totalValue">Valor Total</Label>
               <Input
+                disabled
                 prefix='R$'
                 className="bg-background"
                 id="totalValue"
@@ -277,6 +278,7 @@ export default function RegisterOrder() {
             <InputContainer  size="w-1/4">
               <Label htmlFor="totalSavings">Valor com Desconto</Label>
               <Input
+                disabled
                 prefix='R$'
                 className="bg-background"
                 id="totalSavings"
