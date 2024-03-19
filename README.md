@@ -1,5 +1,5 @@
 # farma4u-client
-Painel admin para o sistema da Farma4U
+Admin panel for Farma4U project
 
 ## Getting Started
 
