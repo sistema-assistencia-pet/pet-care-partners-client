@@ -1,5 +1,5 @@
-# farma4u-client
-Admin panel for Farma4U project
+# clube-milhas-client
+Admin panel for Clube Milhas project.
 
 ## Getting Started
 
