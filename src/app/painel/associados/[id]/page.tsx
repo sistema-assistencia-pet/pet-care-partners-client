@@ -8,12 +8,6 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,

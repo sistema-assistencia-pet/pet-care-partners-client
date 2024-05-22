@@ -4,7 +4,18 @@ import { FieldValues, useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { v4 as uuid } from 'uuid'
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { applyCnpjMask, applyCpfMask, captalize, formatDateTime, removeCnpjMask } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
@@ -30,6 +41,19 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
+import { Label } from '@/components/ui/label'
+import { DetailsRow } from '@/components/DetailsRow'
+import { InputContainer } from '@/components/InputContainer'
+
+interface IClient {
+  id: string
+  cnpj: string
+  fantasyName: string
+  segment: string
+  status: string
+  createdAt: string
+}
+
 interface IMember {
   id: string
   client: {
@@ -60,6 +84,8 @@ const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
 export default function MembersPage() {
   const [members, setMembers] = useState<IMember[]>([])
   const [membersCount, setMembersCount] = useState<number>(0)
+  const [clients, setClients] = useState<IClient[]>([])
+  const [clientIdSelected, setClientIdSelected] = useState<string>('')
   const [skip, setSkip] = useState<number>(0)
   const [page, setPage] = useState<number>(1)
   const [query, setQuery] = useState<URLSearchParams | null>(null)
@@ -188,15 +214,111 @@ export default function MembersPage() {
     setMembersCount(parseInt(response.headers[`x-total-count`]))
   }
 
+  const formatClient = (client: { statusId: number } & Omit<IClient, 'status'>) => ({
+    ...client,
+    cnpj: applyCnpjMask(client.cnpj),
+    fantasyName: captalize(client.fantasyName),
+    segment: captalize(client.segment),
+    createdAt: formatDateTime(client.createdAt),
+    status: STATUS[client.statusId],
+  })
+
+  const fetchClients = async () => {
+    const response = await sendRequest<
+      { clients: Array<Omit<IClient, 'status'> & { statusId: number }>, systemTotalSavings: number }
+    >({
+      endpoint: '/client',
+      method: 'GET',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      setClients([])
+      // setSystemTotalSavings(formatCurrency(0))
+
+      return
+    }
+
+    const formattedClients = response.data.clients.map((client) => formatClient(client))
+
+    setClients(formattedClients)    // setSystemTotalSavings(formatCurrency(response.data.systemTotalSavings))
+  }
+
   // Carrega lista de associados
   useEffect(() => {
     if (query) {
       fetchMembers(query)
     } else fetchMembers()
+
+    fetchClients()
   }, [skip])
 
   return (
     <DashboardLayout title="Associados" secondaryText={`Total: ${membersCount} associados`}>
+      <div className="flex justify-between w-full">
+        <div className="flex gap-4">
+          <AlertDialog>
+            <AlertDialogTrigger className='rounded-md font-medium text-sm uppercase px-8 h-9 bg-primary text-white flex flex-col justify-center'>
+              Cadastrar associado(s)
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogTitle>Escolha o cliente</AlertDialogTitle>
+              <AlertDialogDescription>
+                {/* <Form { ...form }> */}
+                  <form
+                    className='flex flex-col gap-4'
+                  >
+                    <div className="flex flex-col space-y-1.5 bg-white">
+                        <select className='h-8 px-4 border rounded-md'>
+                          <option value="" />
+                          {
+                            clients.map(({ id, fantasyName }) => (
+                              <option key={uuid()} value={id}>{fantasyName}</option>
+                            ))
+                          }
+                        </select>
+                    </div>
+                    <AlertDialogFooter>
+                      <div className='flex flex-col gap-4 justify-end'>
+                        <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                      </div>
+                      <div className='flex flex-col gap-4'>
+                        <Button
+                          disabled={clientIdSelected === ''}
+                          type="button"
+                          variant="secondary"
+                        >
+                          Cadastrar um associado
+                        </Button>
+                        <Label
+                          htmlFor="file-input"
+                          className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+                        >
+                          Cadastrar Associados em Lote
+                        </Label>
+                        <Input
+                          accept=".csv"
+                          disabled={clientIdSelected === ''}
+                          className="hidden"
+                          id="file-input"
+                          // onChange={handleFileChange}
+                          type="file"
+                          multiple={false}
+                          placeholder='Cadastrar Associados em Lote'
+                        />
+                      </div>
+                    </AlertDialogFooter>
+                  </form>
+                {/* </Form> */}
+              </AlertDialogDescription>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
       <Form { ...form }>
         <form
           className='flex flex-row gap-4'
@@ -212,26 +334,26 @@ export default function MembersPage() {
             <Input { ...form.register("name") } placeholder="Nome" type="text" />
           </div>
           <div className="flex flex-col space-y-1.5 bg-white">
-          <FormField
-            control={form.control}
-            name="statusId"
-            render={({ field }) => (
-              <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="w-28">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="1">{STATUS[1]}</SelectItem>
-                    <SelectItem value="2">{STATUS[2]}</SelectItem>
-                    <SelectItem value="3">{STATUS[3]}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="statusId"
+              render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="w-28">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">{STATUS[1]}</SelectItem>
+                      <SelectItem value="2">{STATUS[2]}</SelectItem>
+                      <SelectItem value="3">{STATUS[3]}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
           </div>
           <Button className="w-28" type='submit'>
             Filtrar
