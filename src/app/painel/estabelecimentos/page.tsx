@@ -28,34 +28,41 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
-import { STATUS } from '@/lib/enums'
+import { CATEGORY, STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 
-interface IClient {
+interface ICategory {
+  id: number
+  name: string
+}
+interface IPartner {
   id: string
   cnpj: string
   fantasyName: string
-  segment: string
-  status: string
+  category: ICategory
+  isOnline: boolean
+  statusId: string
   createdAt: string
 }
 
 interface IFormValues {
-  cnpj: string
-  fantasyName: string
+  searchInput: string
+  categoryId: string
   statusId: string
+  isOnline: string
 }
 
 const PAGINATION_LIMIT = 10
 const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
-  cnpj: '',
-  fantasyName: '',
-  statusId: '1'
+  searchInput: '',
+  categoryId: '',
+  statusId: '1',
+  isOnline: ''
 }
 
-export default function ClientsPage() {
-  const [clients, setClients] = useState<IClient[]>([])
-  const [clientsCount, setClientsCount] = useState<number>(0)
+export default function PartnersPage() {
+  const [partners, setPartners] = useState<IPartner[]>([])
+  const [partnersCount, setPartnersCount] = useState<number>(0)
   // const [systemTotalSavings, setSystemTotalSavings] = useState<string>(formatCurrency(0))
   const [skip, setSkip] = useState<number>(0)
   const [page, setPage] = useState<number>(1)
@@ -68,7 +75,7 @@ export default function ClientsPage() {
   const { push } = useRouter()
   const { toast } = useToast()
 
-  const columns: ColumnDef<IClient>[] = [
+  const columns: ColumnDef<IPartner>[] = [
     {
       header: `CNPJ`,
       accessorKey: `cnpj`,
@@ -78,8 +85,8 @@ export default function ClientsPage() {
       accessorKey: `fantasyName`
     },
     {
-      header: `Segmento`,
-      accessorKey: `segment`
+      header: `Categoria`,
+      accessorKey: `category.name`
     },
     {
       header: `Status`,
@@ -95,7 +102,7 @@ export default function ClientsPage() {
       cell: ({ row: { original: { id } } }) => (
         <Button
           className=''
-          onClick={() => push(`/painel/clientes/${id}`)}
+          onClick={() => push(`/painel/estabelecimentos/${id}`)}
           size="icon"
           title="Visualizar Detalhes"
           variant="outline"
@@ -122,17 +129,18 @@ export default function ClientsPage() {
   }
 
   const submitFilter = async (data: FieldValues) => {
-    const { cnpj, fantasyName, statusId } = data
+    const { searchInput, categoryId, isOnline, statusId } = data
     const query = new URLSearchParams()
 
-    const cnpjWithoutMask = removeCnpjMask(cnpj)
+    const searchInputWithoutMask = removeCnpjMask(searchInput)
 
-    if (cnpj) query.append('cnpj', cnpjWithoutMask)
-    if (fantasyName) query.append('fantasy-name', fantasyName)
+    if (searchInput) query.append('search-input', searchInputWithoutMask)
+    if (categoryId) query.append('category-id', categoryId)
     if (statusId) query.append('status-id', statusId)
+    if (statusId) query.append('is-online', isOnline)
 
     setQuery(query)
-    await fetchClients(query)
+    await fetchPartners(query)
   }
 
   const resetFilter = () => {
@@ -141,23 +149,23 @@ export default function ClientsPage() {
     setSkip(0)
     setPage(1)
 
-    fetchClients()
+    fetchPartners()
   }
 
-  const formatClient = (client: { statusId: number } & Omit<IClient, 'status'>) => ({
-    ...client,
-    cnpj: applyCnpjMask(client.cnpj),
-    fantasyName: captalize(client.fantasyName),
-    segment: captalize(client.segment),
-    createdAt: formatDateTime(client.createdAt),
-    status: STATUS[client.statusId],
+  const formatPartner = (partner: { statusId: number } & Omit<IPartner, 'status'>) => ({
+    ...partner,
+    cnpj: applyCnpjMask(partner.cnpj),
+    fantasyName: captalize(partner.fantasyName),
+    category: { id: partner.category.id, name: captalize(partner.category.name) },
+    createdAt: formatDateTime(partner.createdAt),
+    status: STATUS[partner.statusId],
   })
 
-  const fetchClients = async (query?: URLSearchParams) => {
+  const fetchPartners = async (query?: URLSearchParams) => {
     const response = await sendRequest<
-      { clients: Array<Omit<IClient, 'status'> & { statusId: number }>, systemTotalSavings: number }
+      { partners: Array<Omit<IPartner, 'status'> & { statusId: number }>, systemTotalSavings: number }
     >({
-      endpoint: `/client?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
+      endpoint: `/partner?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
       method: 'GET',
     })
 
@@ -167,66 +175,110 @@ export default function ClientsPage() {
         variant: 'destructive'
       })
 
-      setClients([])
-      setClientsCount(0)
+      setPartners([])
+      setPartnersCount(0)
       // setSystemTotalSavings(formatCurrency(0))
 
       return
     }
 
-    const formattedClients = response.data.clients.map((client) => formatClient(client))
+    const formattedPartners = response.data.partners.map((partner) => formatPartner(partner))
 
-    setClients(formattedClients)
-    setClientsCount(parseInt(response.headers[`x-total-count`]))
+    setPartners(formattedPartners)
+    setPartnersCount(parseInt(response.headers[`x-total-count`]))
     // setSystemTotalSavings(formatCurrency(response.data.systemTotalSavings))
   }
 
-  // Carrega lista de clientes
+  // Carrega lista de estabelecimentos
   useEffect(() => {
     if (query) {
-      fetchClients(query)
-    } else fetchClients()
+      fetchPartners(query)
+    } else fetchPartners()
   }, [skip])
 
   return (
     <DashboardLayout
-      secondaryText={`Total: ${clientsCount} clientes`}
+      secondaryText={`Total: ${partnersCount} estabelecimentos`}
       // systemTotalSavingsText={`Economia total do sistema: ${systemTotalSavings}`}
-      title="Clientes"
+      title="Estabelecimentos"
     >
+      <div className='flex flex-row'>
+        <Button type="button" onClick={() => push('/painel/estabelecimentos/cadastrar-estabelecimento')}>
+          Cadastrar estabelecimento
+        </Button>
+      </div>
+
       <Form { ...form }>
         <form
           className='flex flex-row gap-4'
           onSubmit={form.handleSubmit((data) => submitFilter(data))}
         >
-          <Button type="button" onClick={() => push('/painel/clientes/cadastrar-cliente')}>Cadastrar cliente</Button>
           <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...form.register("cnpj") } placeholder="CNPJ" type="text" />
-          </div>
-          <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...form.register("fantasyName") } placeholder="Nome Fantasia" type="text" />
+            <Input { ...form.register("searchInput") } placeholder="CNPJ / Nome / Tag" type="text" />
           </div>
           <div className="flex flex-col space-y-1.5 bg-white">
-          <FormField
-            control={form.control}
-            name="statusId"
-            render={({ field }) => (
-              <FormItem>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="w-28">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="1">{STATUS[1]}</SelectItem>
-                    <SelectItem value="2">{STATUS[2]}</SelectItem>
-                    <SelectItem value="3">{STATUS[3]}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="isOnline"
+              render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="w-28">
+                        <SelectValue placeholder="Tipo" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="true">Online</SelectItem>
+                      <SelectItem value="false">Presencial</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex flex-col space-y-1.5 bg-white">
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="w-28">
+                        <SelectValue placeholder="Categoria" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">{CATEGORY[1]}</SelectItem>
+                      <SelectItem value="2">{CATEGORY[2]}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex flex-col space-y-1.5 bg-white">
+            <FormField
+              control={form.control}
+              name="statusId"
+              render={({ field }) => (
+                <FormItem>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="w-28">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="1">{STATUS[1]}</SelectItem>
+                      <SelectItem value="2">{STATUS[2]}</SelectItem>
+                      <SelectItem value="3">{STATUS[3]}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
           </div>
           <Button className="w-28" type='submit'>
             Filtrar
@@ -243,7 +295,7 @@ export default function ClientsPage() {
         </form>
       </Form>
 
-      <DataTable columns={columns} data={clients} />
+      <DataTable columns={columns} data={partners} />
 
       <Pagination>
         <PaginationContent>
@@ -269,12 +321,12 @@ export default function ClientsPage() {
               size="default"
               className='cursor-default hover:bg-background'
             >
-              {`${page} de ${Math.ceil(clientsCount/PAGINATION_LIMIT)}`}
+              {`${page} de ${Math.ceil(partnersCount/PAGINATION_LIMIT)}`}
             </PaginationLink>
           </PaginationItem>
           <PaginationItem>
             <PaginationNext
-              disabled={clientsCount <= page * PAGINATION_LIMIT}
+              disabled={partnersCount <= page * PAGINATION_LIMIT}
               onClick={handleNextPagination}
               type="button"
             />

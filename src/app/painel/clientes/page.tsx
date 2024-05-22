@@ -194,12 +194,16 @@ export default function ClientsPage() {
       // systemTotalSavingsText={`Economia total do sistema: ${systemTotalSavings}`}
       title="Clientes"
     >
+      <div className='flex flex-row'>
+        <Button type="button" onClick={() => push('/painel/clientes/cadastrar-cliente')}>
+          Cadastrar cliente
+        </Button>
+      </div>
       <Form { ...form }>
         <form
           className='flex flex-row gap-4'
           onSubmit={form.handleSubmit((data) => submitFilter(data))}
         >
-          <Button type="button" onClick={() => push('/painel/clientes/cadastrar-cliente')}>Cadastrar cliente</Button>
           <div className="flex flex-col grow space-y-1.5 bg-white">
             <Input { ...form.register("cnpj") } placeholder="CNPJ" type="text" />
           </div>

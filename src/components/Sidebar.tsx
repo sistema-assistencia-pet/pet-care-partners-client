@@ -12,7 +12,7 @@ import {
   CommandList
 } from "@/components/ui/command"
 import logo from '../../public/logo-f4u-png.png'
-import { Store, Users } from 'lucide-react'
+import { Building, Store, Users } from 'lucide-react'
 import UserCard from './UserCard'
 
 export default function Sidebar() {
@@ -23,7 +23,8 @@ export default function Sidebar() {
       group: 'Sessões',
       items: [
         { name: 'Associados', link: '/painel/associados', icon: <Users /> },
-        { name: 'Clientes', link: '/painel/clientes', icon: <Store /> },
+        { name: 'Clientes', link: '/painel/clientes', icon: <Building /> },
+        { name: 'Estabelecimentos', link: '/painel/estabelecimentos', icon: <Store /> },
       ]
     }
   ]
