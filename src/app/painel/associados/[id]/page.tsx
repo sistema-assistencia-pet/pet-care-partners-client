@@ -39,30 +39,30 @@ import { Separator } from '@/components/ui/separator'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 
-interface IItem {
-  id: string
-  orderId: string
-  medicineName: string
-  medicineType: string
-  quantity: number
-  listPrice: string
-  discountPrice: string
-  createdAt: string
-  updatedAt: string
-}
+// interface IItem {
+//   id: string
+//   orderId: string
+//   medicineName: string
+//   medicineType: string
+//   quantity: number
+//   listPrice: string
+//   discountPrice: string
+//   createdAt: string
+//   updatedAt: string
+// }
 
-interface IOrder {
-  id: string
-  memberId: string
-  clientId: string
-  totalValue: string
-  totalSavings: string
-  isRecurring: false,
-  status: string
-  createdAt: string
-  updatedAt: string
-  items: IItem[]
-}
+// interface IOrder {
+//   id: string
+//   memberId: string
+//   clientId: string
+//   totalValue: string
+//   totalSavings: string
+//   isRecurring: false,
+//   status: string
+//   createdAt: string
+//   updatedAt: string
+//   items: IItem[]
+// }
 
 interface IMemberDetailed {
   id: string
@@ -80,29 +80,29 @@ interface IMemberDetailed {
   totalSavings: string
   status: string
   createdAt: string
-  orders: IOrder[]
+  // orders: IOrder[]
 }
 
-type ItemFromAPI = Omit<
-IItem, 'listPrice' | 'discountPrice'
-> & {
-listPrice: number
-discountPrice: number
-}
+// type ItemFromAPI = Omit<
+// IItem, 'listPrice' | 'discountPrice'
+// > & {
+// listPrice: number
+// discountPrice: number
+// }
 
-type OrderFromAPI = Omit<
-IOrder, 'totalValue' | 'totalSavings' | 'items' | 'status'
-> & {
-items: ItemFromAPI[]
-totalSavings: number
-totalValue: number
-statusId: number
-}
+// type OrderFromAPI = Omit<
+// IOrder, 'totalValue' | 'totalSavings' | 'items' | 'status'
+// > & {
+// items: ItemFromAPI[]
+// totalSavings: number
+// totalValue: number
+// statusId: number
+// }
 
 type MemberDetailedFromAPI = Omit<
   IMemberDetailed, 'totalSavings' | 'status' | 'orders'
 > & {
-  orders: OrderFromAPI[]
+  // orders: OrderFromAPI[]
   statusId: number
   totalSavings: number,
 }
@@ -165,24 +165,24 @@ export default function MemberDetailsPage() {
     cep: applyCepMask(member.cep),
     totalSavings: formatCurrency(member.totalSavings),
     status: STATUS[member.statusId],
-    createdAt: formatDateTime(member.createdAt),
-    orders: member.orders.map((order) => ({
-      ...order,
-      totalValue: formatCurrency(order.totalValue),
-      totalSavings: formatCurrency(order.totalSavings),
-      status: STATUS[order.statusId],
-      createdAt: formatDateTime(order.createdAt),
-      updatedAt: formatDateTime(order.updatedAt),
-      items: order.items.map((item) => ({
-        ...item,
-        listPrice: formatCurrency(item.listPrice),
-        discountPrice: formatCurrency(item.discountPrice),
-        createdAt: formatDateTime(item.createdAt),
-        updatedAt: formatDateTime(item.updatedAt),
-        medicineName: captalize(item.medicineName),
-        medicineType: captalize(item.medicineType)
-      }))
-    }))
+    createdAt: formatDateTime(member.createdAt)
+    // orders: member.orders.map((order) => ({
+    //   ...order,
+    //   totalValue: formatCurrency(order.totalValue),
+    //   totalSavings: formatCurrency(order.totalSavings),
+    //   status: STATUS[order.statusId],
+    //   createdAt: formatDateTime(order.createdAt),
+    //   updatedAt: formatDateTime(order.updatedAt),
+    //   items: order.items.map((item) => ({
+    //     ...item,
+    //     listPrice: formatCurrency(item.listPrice),
+    //     discountPrice: formatCurrency(item.discountPrice),
+    //     createdAt: formatDateTime(item.createdAt),
+    //     updatedAt: formatDateTime(item.updatedAt),
+    //     medicineName: captalize(item.medicineName),
+    //     medicineType: captalize(item.medicineType)
+    //   }))
+    // }))
   })
 
   const fillUpdateForm = (member: MemberDetailedFromAPI) => {
@@ -315,51 +315,51 @@ export default function MemberDetailsPage() {
     fetchMember(id)
   }
 
-  const activateOrder = async (id: string, memberId: string) => {
-    const response = await sendRequest({
-      endpoint: `/order/${id}/activate`,
-      method: 'PATCH',
-    })
+  // const activateOrder = async (id: string, memberId: string) => {
+  //   const response = await sendRequest({
+  //     endpoint: `/order/${id}/activate`,
+  //     method: 'PATCH',
+  //   })
 
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
+  //   if (response.error) {
+  //     toast({
+  //       description: response.message,
+  //       variant: 'destructive'
+  //     })
 
-      return
-    }
+  //     return
+  //   }
 
-    toast({
-      description: response.message,
-      variant: "success"
-    })
+  //   toast({
+  //     description: response.message,
+  //     variant: "success"
+  //   })
 
-    fetchMember(memberId)
-  }
+  //   fetchMember(memberId)
+  // }
 
-  const inactivateOrder = async (id: string, memberId: string) => {
-    const response = await sendRequest({
-      endpoint: `/order/${id}/inactivate`,
-      method: 'PATCH',
-    })
+  // const inactivateOrder = async (id: string, memberId: string) => {
+  //   const response = await sendRequest({
+  //     endpoint: `/order/${id}/inactivate`,
+  //     method: 'PATCH',
+  //   })
 
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
+  //   if (response.error) {
+  //     toast({
+  //       description: response.message,
+  //       variant: 'destructive'
+  //     })
 
-      return
-    }
+  //     return
+  //   }
 
-    toast({
-      description: response.message,
-      variant: "success"
-    })
+  //   toast({
+  //     description: response.message,
+  //     variant: "success"
+  //   })
 
-    fetchMember(memberId)
-  }
+  //   fetchMember(memberId)
+  // }
 
   useEffect(() => {
     if (params.id) fetchMember(params.id as string)
@@ -367,16 +367,18 @@ export default function MemberDetailsPage() {
 
   return (
     <DashboardLayout
-      secondaryText={`Economia Total: ${memberDetailed?.totalSavings || ''}`}
+      // secondaryText={`Economia Total: ${memberDetailed?.totalSavings || ''}`}
       title={`${memberDetailed?.name || ''}`}
     >
       <div className="flex justify-between w-full">
-        <Button
+        {/* <Button
           disabled={memberDetailed?.status !== STATUS[1]}
           onClick={() => {push(`/painel/associados/${params.id as string}/cadastrar-pedido`)}}
         >
           Cadastrar Pedido
-        </Button>
+        </Button> */}
+
+        <div />
 
         <div className="flex gap-4">
           {
@@ -541,13 +543,13 @@ export default function MemberDetailsPage() {
         </DetailsRow>
 
         <DetailsRow>
-          <DetailsField label="Data de Nascimento" value={memberDetailed?.birthDate} />
           <DetailsField label="Nome do Cliente" value={memberDetailed?.client.fantasyName} />
-          <DetailsField label="CNPJ do Cliente" value={memberDetailed?.client.cnpj} />
+          <DetailsField label="CNPJ do Cliente" value={memberDetailed?.client.cnpj} width="min-w-60" />
         </DetailsRow>
 
         <DetailsRow>
-          <DetailsField label="Economia Total" value={memberDetailed?.totalSavings} />
+          {/* <DetailsField label="Economia Total" value={memberDetailed?.totalSavings} /> */}
+          <DetailsField label="Data de Nascimento" value={memberDetailed?.birthDate} />
           <DetailsField label="Status" value={memberDetailed?.status} />
           <DetailsField label="Data do Cadastro" value={memberDetailed?.createdAt} />
         </DetailsRow>
@@ -560,9 +562,9 @@ export default function MemberDetailsPage() {
           <DetailsField label="CEP" value={memberDetailed?.cep} />
         </DetailsRow>
 
-        <Separator />
+        {/* <Separator /> */}
 
-        <Accordion className="rounded-md border bg-background" type="single" collapsible>
+        {/* <Accordion className="rounded-md border bg-background" type="single" collapsible>
           <AccordionItem value="item-1">
             <AccordionTrigger className="font-semibold">Histórico de Pedidos</AccordionTrigger>
             {
@@ -570,9 +572,7 @@ export default function MemberDetailsPage() {
                 <AccordionContent key={uuid()}>
                   <div className='bg-white border rounded-md flex p-4 flex-col gap-4'>
                     <div className="flex justify-between w-full">
-                      {/* <div> */}
                         <h3 className='font-semibold'>{`Data do pedido: ${order.createdAt}`}</h3>
-                      {/* </div> */}
 
                       <div className="flex gap-4">
                         {
@@ -653,7 +653,7 @@ export default function MemberDetailsPage() {
                 </AccordionContent>
               ))}
           </AccordionItem>
-        </Accordion>
+        </Accordion> */}
       </div>
     </DashboardLayout>
   )
