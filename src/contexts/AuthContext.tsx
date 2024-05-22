@@ -39,7 +39,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   async function signIn({ cpf, password }: { cpf: string, password: string }): Promise<void> {
     const response = await sendRequest<{ user: UserLogged }>({
-      endpoint: '/auth/login-admin',
+      endpoint: '/auth/login/admin',
       method: 'POST',
       data: { cpf: cpf.trim(), password: password.trim() },
     })
