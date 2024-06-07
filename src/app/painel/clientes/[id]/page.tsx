@@ -343,7 +343,6 @@ export default function ClientDetailsPage() {
       description: response.message,
       variant: "success"
     })
-  
   }
 
   useEffect(() => {

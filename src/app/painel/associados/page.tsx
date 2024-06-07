@@ -42,8 +42,6 @@ import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 import { Label } from '@/components/ui/label'
-import { DetailsRow } from '@/components/DetailsRow'
-import { InputContainer } from '@/components/InputContainer'
 
 interface IClient {
   id: string
@@ -89,6 +87,7 @@ export default function MembersPage() {
   const [skip, setSkip] = useState<number>(0)
   const [page, setPage] = useState<number>(1)
   const [query, setQuery] = useState<URLSearchParams | null>(null)
+  const [fileSelected, setFileSelected] = useState<File | null>(null)
 
   const form = useForm<IFormValues>({
     mode: 'onSubmit',
@@ -248,6 +247,55 @@ export default function MembersPage() {
     setClients(formattedClients)    // setSystemTotalSavings(formatCurrency(response.data.systemTotalSavings))
   }
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+
+    if (files && files.length > 0) {
+      const file = files[0]
+
+      if (file.type === "text/csv") {
+        setFileSelected(file)
+      } else {
+        toast({
+          description: "O arquivo selecionado não tem a extensão .csv",
+          variant: "destructive"
+        })
+        setFileSelected(null)
+      }
+    }
+  }
+
+  const sendCSVToCreateMembers = async (file: File) => {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const response = await sendRequest({
+      endpoint: `/member/${clientIdSelected}/create-members-in-bulk`,
+      method: 'POST',
+      data: formData,
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+  }
+
+  useEffect(() => {
+    if (fileSelected) {
+      sendCSVToCreateMembers(fileSelected)
+    }
+  }, [fileSelected])
+
   // Carrega lista de associados
   useEffect(() => {
     if (query) {
@@ -273,7 +321,11 @@ export default function MembersPage() {
                     className='flex flex-col gap-4'
                   >
                     <div className="flex flex-col space-y-1.5 bg-white">
-                        <select className='h-8 px-4 border rounded-md'>
+                        <select
+                          className='h-8 px-4 border rounded-md'
+                          value={clientIdSelected}
+                          onChange={({ target }) => setClientIdSelected(target.value)}
+                        >
                           <option value="" />
                           {
                             clients.map(({ id, fantasyName }) => (
@@ -284,11 +336,12 @@ export default function MembersPage() {
                     </div>
                     <AlertDialogFooter>
                       <div className='flex flex-col gap-4 justify-end'>
-                        <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                        <AlertDialogCancel type="button">Fechar</AlertDialogCancel>
                       </div>
                       <div className='flex flex-col gap-4'>
                         <Button
                           disabled={clientIdSelected === ''}
+                          onClick={() => push(`/painel/clientes/${clientIdSelected}/cadastrar-associado`)}
                           type="button"
                           variant="secondary"
                         >
@@ -305,7 +358,7 @@ export default function MembersPage() {
                           disabled={clientIdSelected === ''}
                           className="hidden"
                           id="file-input"
-                          // onChange={handleFileChange}
+                          onChange={handleFileChange}
                           type="file"
                           multiple={false}
                           placeholder='Cadastrar Associados em Lote'
