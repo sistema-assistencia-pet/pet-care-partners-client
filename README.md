@@ -1,5 +1,5 @@
-# clube-milhas-client
-Admin panel for Clube Milhas project.
+# clube-rede-client
+Admin panel for Clube Rede project.
 
 ## Getting Started
 

@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command"
-import logo from '../../public/logo-f4u-png.png'
+import logo from '../../public/logo-clube-rede-black-png.png'
 import { Building, Store, Users } from 'lucide-react'
 import UserCard from './UserCard'
 
@@ -55,7 +55,7 @@ export default function Sidebar() {
         </Command>
       </nav>
 
-      <Image className="rounded-md px-2" src={logo} alt="Farma4U" priority />
+      <Image className="rounded-md p-8" src={logo} alt="Logo do Clube Rede" priority />
     </aside>
   )
 }
