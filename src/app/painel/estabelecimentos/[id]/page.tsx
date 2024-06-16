@@ -198,6 +198,9 @@ const UPDATE_PARTNER_FORM_DEFAULT_VALUES = {
 
 export default function PartnerDetailsPage() {
   const [partnerDetailed, setPartnerDetailed] = useState<PartnerDetailed | null>(null)
+  const [imageFileSelected, setImageFileSelected] = useState<File | null>(null)
+  const [logoFileSelected, setLogoFileSelected] = useState<File | null>(null)
+
   const params = useParams()
   const { toast } = useToast()
 
@@ -279,6 +282,11 @@ export default function PartnerDetailsPage() {
       return
     }
 
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
     fetchPartner(params.id as string)
   }
 
@@ -351,6 +359,112 @@ export default function PartnerDetailsPage() {
     fetchPartner(id)
   }
 
+  const handleImageFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+
+    if (files && files.length > 0) {
+      const file = files[0]
+
+      if (["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
+        setImageFileSelected(file)
+        toast({
+          description: "Imagem selecionada, aguardando envio.",
+          variant: "default"
+        })
+      } else {
+        toast({
+          description: "O arquivo selecionado não tem a extensão .jpg, .jpeg ou .png",
+          variant: "destructive"
+        })
+        setImageFileSelected(null)
+      }
+    }
+  }
+
+  const handleLogoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files
+
+    if (files && files.length > 0) {
+      const file = files[0]
+
+      if (["image/png", "image/jpeg", "image/jpg"].includes(file.type)) {
+        setLogoFileSelected(file)
+        toast({
+          description: "Logo selecionada, aguardando envio.",
+          variant: "default"
+        })
+      } else {
+        toast({
+          description: "O arquivo selecionado não tem a extensão .jpg, .jpeg ou .png",
+          variant: "destructive"
+        })
+        setLogoFileSelected(null)
+      }
+    }
+  }
+
+  const sendImageFile = async (file: File, partnerId: string) => {
+    const formData = new FormData()
+    formData.append("image", file)
+
+    const response = await sendRequest({
+      endpoint: `/partner/${partnerId}/image`,
+      method: 'PATCH',
+      data: formData,
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchPartner(partnerId)
+  }
+
+  const sendLogoFile = async (file: File, partnerId: string) => {
+    const formData = new FormData()
+    formData.append("logo", file)
+
+    const response = await sendRequest({
+      endpoint: `/partner/${partnerId}/logo`,
+      method: 'PATCH',
+      data: formData,
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchPartner(partnerId)
+  }
+
+  useEffect(() => {
+    if (imageFileSelected !== null) sendImageFile(imageFileSelected, params.id as string)
+  } , [imageFileSelected])
+
+  useEffect(() => {
+    if (logoFileSelected !== null) sendLogoFile(logoFileSelected, params.id as string)
+  } , [logoFileSelected])
+
   const fetchPartner = async (id: string) => {
     const response = await sendRequest<{ partner: IPartnerDetailedFromAPI }>({
       endpoint: `/partner/${id}`,
@@ -386,6 +500,38 @@ export default function PartnerDetailsPage() {
     >
       <div className="flex justify-between w-full">
         <div className="flex gap-4 justify-end w-full">
+        <InputContainer>
+              <Label
+                htmlFor="image-file-input"
+                className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+              >
+                Inserir imagem
+              </Label>
+              <Input
+                accept="image/png, image/jpeg"
+                className="hidden"
+                id="image-file-input"
+                onChange={handleImageFileChange}
+                type="file"
+                multiple={false}
+              />
+            </InputContainer>
+            <InputContainer>
+              <Label
+                htmlFor="logo-file-input"
+                className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+              >
+                Inserir logo
+              </Label>
+              <Input
+                accept="image/png, image/jpeg"
+                className="hidden"
+                id="logo-file-input"
+                onChange={handleLogoFileChange}
+                type="file"
+                multiple={false}
+              />
+            </InputContainer>
           {
             partnerDetailed?.status === STATUS[1] && (
               <AlertDialog>
