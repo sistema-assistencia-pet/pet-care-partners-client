@@ -19,7 +19,7 @@ export const formatDateTime = (date: string): string => new Date(date).toLocaleS
 
 export const formatBirthdate = (date: string): string => date.split('-').reverse().join('/')
 
-export const formatPhoneNumber = (phoneNumber: string): string => `(${phoneNumber.slice(0, 2)}) ${phoneNumber.slice(2, 7)}-${phoneNumber.slice(7, 11)}`
+export const formatPhoneNumber = (phoneNumber: string): string => `(${phoneNumber.slice(0, 2)}) ${phoneNumber.length === 10 ? `${phoneNumber.slice(2, 6)}-${phoneNumber.slice(6, 10)}` : `${phoneNumber.slice(2, 7)}-${phoneNumber.slice(7, 11)}`}`
 
 export const formatCurrency = (value: number): string => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 

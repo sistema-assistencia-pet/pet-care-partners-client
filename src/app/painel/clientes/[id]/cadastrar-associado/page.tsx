@@ -38,7 +38,7 @@ const newMemberFormSchema = z.object({
     .email({ message: 'O campo E-mail deve ser um e-mail válido.' }),
   phoneNumber: z
     .string({ required_error: 'O campo Telefone é obrigatório.' })
-    .min(11, { message: 'O campo Telefone deve ter pelo menos 11 caracteres.' }),
+    .min(10, { message: 'O campo Telefone deve ter pelo menos 10 caracteres.' }),
   birthDate: z
     .string({ required_error: 'O campo Data de Nascimento é obrigatório.' })
     .length(10, { message: 'O campo Data de Nascimento deve ter pelo menos 10 caracteres.' }),

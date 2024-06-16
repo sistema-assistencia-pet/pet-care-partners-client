@@ -90,7 +90,7 @@ const updateClientFormSchema = z.object({
     .optional(),
   managerPhoneNumber: z
     .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
-    .min(11, { message: 'O campo Telefone do Responsável deve ter pelo menos 11 caracteres.' })
+    .min(10, { message: 'O campo Telefone do Responsável deve ter pelo menos 10 caracteres.' })
     .optional(),
   managerEmail: z
     .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
@@ -98,7 +98,7 @@ const updateClientFormSchema = z.object({
     .optional(),
   financePhoneNumber: z
     .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
-    .min(11, { message: 'O campo Telefone do Financeiro deve ter pelo menos 11 caracteres.' })
+    .min(10, { message: 'O campo Telefone do Financeiro deve ter pelo menos 10 caracteres.' })
     .optional(),
   lumpSum: z.coerce
     .number({ required_error: 'O campo Valor Fixo é obrigatório.' })
@@ -545,7 +545,7 @@ export default function ClientDetailsPage() {
                           <Label htmlFor="managerPhoneNumber">Telefone do Responsável</Label>
                           <InputMask
                             className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            mask="(99) 99999-9999"
+                            mask="(99) 999999999"
                             { ...form.register("managerPhoneNumber",) }
                           />
                           {

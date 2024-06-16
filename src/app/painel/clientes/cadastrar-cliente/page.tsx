@@ -54,13 +54,13 @@ const newClientFormSchema = z.object({
     .min(3, {message: 'O campo Nome do Responsável deve ter pelo menos 3 caracteres.'}),
   managerPhoneNumber: z
     .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
-    .min(11, { message: 'O campo Telefone do Responsável deve ter pelo menos 11 caracteres.' }),
+    .min(10, { message: 'O campo Telefone do Responsável deve ter pelo menos 10 caracteres.' }),
   managerEmail: z
     .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
     .email({ message: 'O campo E-mail do Responsável deve ser um e-mail válido.' }),
   financePhoneNumber: z
     .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
-    .min(11, { message: 'O campo Telefone do Financeiro deve ter pelo menos 11 caracteres.' }),
+    .min(10, { message: 'O campo Telefone do Financeiro deve ter pelo menos 10 caracteres.' }),
   lumpSum: z.coerce
     .number({ required_error: 'O campo Valor do Boleto é obrigatório.' })
     .gte(0, { message: 'O campo Valor do Boleto deve ser maior ou igual a 0.' })
