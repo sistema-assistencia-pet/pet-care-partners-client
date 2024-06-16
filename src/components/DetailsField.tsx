@@ -18,7 +18,7 @@ export const DetailsField = ({
     title={value?.toString()}
   >
     <span className="text-sm font-semibold">{label}</span>
-    { value && <span className="overflow-hidden text-ellipsis whitespace-nowrap">{value}</span>}
+    { value && <span className="overflow-hidden text-ellipsis whitespace-nowrap text-wrap">{value}</span>}
     {children}
   </div>
 )

@@ -17,60 +17,77 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { applyCnpjMask, captalize, formatCurrency, formatDateTime, formatPhoneNumber } from '@/lib/utils'
+import { applyCnpjMask, captalize, formatDateTime, formatPhoneNumber } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import CurrencyInput from 'react-currency-input-field'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DetailsField } from '@/components/DetailsField'
 import { DetailsRow } from '@/components/DetailsRow'
-import { Form } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { InputContainer } from '@/components/InputContainer'
 import InputMask from "react-input-mask"
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { Pencil, Trash2 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
 import { Separator } from '@/components/ui/separator'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 
 
-interface IClientDetailed {
-  id: string
-  cnpj: string
-  corporateName: string
-  fantasyName: string
-  segment: string
+interface IPartnerDetailedFromAPI {
+  about: string
   address: string
-  state: string
+  benefit1Description: string
+  benefit1Link: string
+  benefit1Rules: string
+  benefit1Title: string
+  benefit1Voucher: string
+  benefit2Description: string
+  benefit2Link: string
+  benefit2Rules: string
+  benefit2Title: string
+  benefit2Voucher: string
+  businessPhoneNumber: string
+  category: { id: number, name: string }
+  categoryId: number
   city: string
+  cnpj: string
+  contractUrl: string
+  corporateName: string
+  createdAt: string
+  fantasyName: string
+  id: string
+  image: string
+  instagram: string
+  isOnline: boolean
+  logo: string
+  managerEmail: string
   managerName: string
   managerPhoneNumber: string
-  managerEmail: string
-  financePhoneNumber: string
-  lumpSum: string
-  unitValue: string
-  totalSavings: string
-  contractUrl: string
-  status: string
-  createdAt: string
+  openingHours: string
+  state: string
+  statusId: number
+  tags: string
+  webpage: string
 }
 
-type CLientDetailedFromAPI = Omit<IClientDetailed, 'lumpSum' | 'unitValue' | 'totalSavings' | 'status'> & { lumpSum: number, unitValue: number, totalSavings: number, statusId: number }
+type PartnerDetailed = Omit<IPartnerDetailedFromAPI, 'statusId'> & { status: string }
 
-const updateClientFormSchema = z.object({
+const updatePartnerFormSchema = z.object({
   corporateName: z
     .string({ required_error: 'O campo Razão Social é obrigatório.' })
-    .min(3, {  message: 'O campo Razão Social deve ter pelo menos 3 caracteres.' })
     .optional(),
   fantasyName: z
     .string({ required_error: 'O campo Nome Fantasia é obrigatório.' })
     .min(3, { message: 'O campo Nome Fantasia deve ter pelo menos 3 caracteres.' })
-    .optional(),
-  segment: z
-    .string({ required_error: 'O campo Segmento é obrigatório.' })
-    .min(3, { message: 'O campo Segmento deve ter pelo menos 3 caracteres.' })
     .optional(),
   address: z
     .string({ required_error: 'O campo Endereço é obrigatório.' })
@@ -84,6 +101,16 @@ const updateClientFormSchema = z.object({
     .string({required_error: 'O campo Cidade é obrigatório.' })
     .min(3, { message: 'O campo Cidade deve ter pelo menos 3 caracteres.' })
     .optional(),
+  categoryId: z
+    .string({required_error: 'O campo Categoria é obrigatório.' })
+    .min(1, { message: 'O campo Categoria é obrigatório.' })
+    .optional(),
+  tags: z
+    .string({required_error: 'O campo Tags é obrigatório.' })
+    .optional(),
+  isOnline: z
+    .string({required_error: 'O campo Online é obrigatório.' })
+    .optional(),
   managerName: z
     .string({required_error: 'O campo Nome do Responsável é obrigatório.'})
     .min(3, {message: 'O campo Nome do Responsável deve ter pelo menos 3 caracteres.'})
@@ -94,29 +121,66 @@ const updateClientFormSchema = z.object({
     .optional(),
   managerEmail: z
     .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
-    .email({ message: 'O campo E-mail do Responsável deve ser um e-mail válido.' })
+    // .email({ message: 'O campo E-mail do Responsável deve ser um e-mail válido.' })
     .optional(),
-  financePhoneNumber: z
-    .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
-    .min(11, { message: 'O campo Telefone do Financeiro deve ter pelo menos 11 caracteres.' })
+  businessPhoneNumber: z
+    .string({ required_error: 'O campo Telefone Comercial é obrigatório.' })
+    .min(11, { message: 'O campo Telefone Comercial deve ter pelo menos 11 caracteres.' })
     .optional(),
-  lumpSum: z.coerce
-    .number({ required_error: 'O campo Valor Fixo é obrigatório.' })
-    .gte(0, { message: 'O campo Valor Fixo deve ser maior ou igual a 0.' })
+  about: z
+    .string({ required_error: 'O campo Sobre é obrigatório.' })
     .optional(),
-  unitValue: z.coerce
-    .number({ required_error: 'O campo Valor Unitário é obrigatório.' })
-    .gte(0, { message: 'O campo Valor Unitário deve ser maior ou igual a 0.' })
+  openingHours: z
+    .string({ required_error: 'O campo Horário de Funcionamento é obrigatório.' })
+    .optional(),
+  instagram: z
+    .string({ required_error: 'O campo Instagram é obrigatório.' })
+    .optional(),
+  webpage: z
+    .string({ required_error: 'O campo Página Oficial é obrigatório.' })
+    // .url({ message: 'O campo Página Oficial deve ser uma URL válida.' })
     .optional(),
   contractUrl: z
     .string({ required_error: 'O campo URL do Contrato é obrigatório.' })
-    .url({ message: 'O campo URL do Contrato deve ser uma URL válida.' })
+    // .url({ message: 'O campo URL do Contrato deve ser uma URL válida.' })
+    .optional(),
+  benefit1Title: z
+    .string({ required_error: 'O campo Título do Benefício 1 é obrigatório.' })
+    .optional(),
+  benefit1Description: z
+    .string({ required_error: 'O campo Descrição do Benefício 1 é obrigatório.' })
+    .optional(),
+  benefit1Rules: z
+    .string({ required_error: 'O campo Regras do Benefício 1 é obrigatório.' })
+    .optional(),
+  benefit1Link: z
+    .string({ required_error: 'O campo Link do Benefício 1 é obrigatório.' })
+    .optional(),
+  benefit1Voucher: z
+    .string({ required_error: 'O campo Voucher do Benefício 1 é obrigatório.' })
+    .optional(),
+  benefit2Title: z
+    .string({ required_error: 'O campo Título do Benefício 2 é obrigatório.' })
+    .optional(),
+  benefit2Description: z
+    .string({ required_error: 'O campo Descrição do Benefício 2 é obrigatório.' })
+    .optional(),
+  benefit2Rules: z
+    .string({ required_error: 'O campo Regras do Benefício 2 é obrigatório.' })
+    .optional(),
+  benefit2Link: z
+    .string({ required_error: 'O campo Link do Benefício 2 ("benefit2Link") é obrigatório.' })
+    .optional(),
+  benefit2Voucher: z
+    .string({ required_error: 'O campo Voucher do Benefício 2 ("benefit2Voucher") é obrigatório.' })
     .optional()
 })
 
-type UpdateClientFormSchema = z.infer<typeof updateClientFormSchema>
+type UpdatePartnerFormSchema = z.infer<typeof updatePartnerFormSchema>
 
-const UPDATE_CLIENT_FORM_DEFAULT_VALUES = {
+type UpdatePartnerDataToSendToApi = Omit<UpdatePartnerFormSchema, 'isOnline' | 'categoryId'> & { isOnline: boolean, categoryId: number }
+
+const UPDATE_PARTNER_FORM_DEFAULT_VALUES = {
   corporateName: '',
   fantasyName: '',
   segment: '',
@@ -132,57 +196,164 @@ const UPDATE_CLIENT_FORM_DEFAULT_VALUES = {
   contractUrl: ''
 }
 
-export default function ClientDetailsPage() {
-  const [clientDetailed, setClientDetailed] = useState<IClientDetailed | null>(null)
-  const [fileSelected, setFileSelected] = useState<File | null>(null)
+export default function PartnerDetailsPage() {
+  const [partnerDetailed, setPartnerDetailed] = useState<PartnerDetailed | null>(null)
   const params = useParams()
-  const { push } = useRouter()
   const { toast } = useToast()
 
-  const form = useForm<UpdateClientFormSchema>({
+  const form = useForm<UpdatePartnerFormSchema>({
     mode: 'onBlur',
-    defaultValues: UPDATE_CLIENT_FORM_DEFAULT_VALUES,
-    resolver: zodResolver(updateClientFormSchema)
+    defaultValues: UPDATE_PARTNER_FORM_DEFAULT_VALUES,
+    resolver: zodResolver(updatePartnerFormSchema)
   })
 
-  const formatClientDetailed = (client: CLientDetailedFromAPI) => ({
-    ...client,
-    cnpj: applyCnpjMask(client.cnpj),
-    corporateName: captalize(client.corporateName),
-    fantasyName: captalize(client.fantasyName),
-    segment: captalize(client.segment),
-    address: captalize(client.address),
-    state: client.state.toLocaleUpperCase(),
-    city: captalize(client.city),
-    managerName: captalize(client.managerName),
-    managerPhoneNumber: formatPhoneNumber(client.managerPhoneNumber),
-    financePhoneNumber: formatPhoneNumber(client.financePhoneNumber),
-    lumpSum: client.lumpSum === 0 ? '-' : formatCurrency(client.lumpSum),
-    unitValue: client.unitValue === 0 ? '-' : formatCurrency(client.unitValue),
-    totalSavings: formatCurrency(client.totalSavings),
-    status: STATUS[client.statusId],
-    createdAt: formatDateTime(client.createdAt)
+  const formatPartnerDetailed = (partner: IPartnerDetailedFromAPI): PartnerDetailed => ({
+    ...partner,
+    cnpj: applyCnpjMask(partner.cnpj),
+    corporateName: captalize(partner.corporateName),
+    fantasyName: captalize(partner.fantasyName),
+    state: partner.state.toLocaleUpperCase(),
+    city: captalize(partner.city),
+    managerName: captalize(partner.managerName),
+    managerPhoneNumber: formatPhoneNumber(partner.managerPhoneNumber),
+    businessPhoneNumber: formatPhoneNumber(partner.businessPhoneNumber),
+    status: STATUS[partner.statusId],
+    createdAt: formatDateTime(partner.createdAt)
   })
 
-  const fillUpdateForm = (client: CLientDetailedFromAPI) => {
-    form.setValue('fantasyName', client.fantasyName)
-    form.setValue('corporateName', client.corporateName)
-    form.setValue('segment', client.segment)
-    form.setValue('contractUrl', client.contractUrl)
-    form.setValue('lumpSum', client.lumpSum)
-    form.setValue('unitValue', client.unitValue)
-    form.setValue('managerName', client.managerName)
-    form.setValue('managerEmail', client.managerEmail)
-    form.setValue('managerPhoneNumber', client.managerPhoneNumber)
-    form.setValue('financePhoneNumber', client.financePhoneNumber)
-    form.setValue('address', client.address)
-    form.setValue('state', client.state)
-    form.setValue('city', client.city)
+  const fillUpdateForm = (partner: IPartnerDetailedFromAPI) => {
+    form.setValue('corporateName', partner.corporateName)
+    form.setValue('fantasyName', partner.fantasyName)
+    form.setValue('address', partner.address)
+    form.setValue('state', partner.state)
+    form.setValue('city', partner.city)
+    form.setValue('categoryId', partner.categoryId.toString())
+    form.setValue('tags', partner.tags)
+    form.setValue('isOnline', partner.isOnline.toString())
+    form.setValue('managerName', partner.managerName)
+    form.setValue('managerPhoneNumber', partner.managerPhoneNumber)
+    form.setValue('managerEmail', partner.managerEmail)
+    form.setValue('businessPhoneNumber', partner.businessPhoneNumber)
+    form.setValue('about', partner.about)
+    form.setValue('openingHours', partner.openingHours)
+    form.setValue('instagram', partner.instagram)
+    form.setValue('webpage', partner.webpage)
+    form.setValue('contractUrl', partner.contractUrl)
+    form.setValue('benefit1Title', partner.benefit1Title)
+    form.setValue('benefit1Description', partner.benefit1Description)
+    form.setValue('benefit1Rules', partner.benefit1Rules)
+    form.setValue('benefit1Link', partner.benefit1Link)
+    form.setValue('benefit1Voucher', partner.benefit1Voucher)
+    form.setValue('benefit2Title', partner.benefit2Title)
+    form.setValue('benefit2Description', partner.benefit2Description)
+    form.setValue('benefit2Rules', partner.benefit2Rules)
+    form.setValue('benefit2Link', partner.benefit2Link)
+    form.setValue('benefit2Voucher', partner.benefit2Voucher)
   }
 
-  const fetchClient = async (id: string) => {
-    const response = await sendRequest<{ client: CLientDetailedFromAPI }>({
-      endpoint: `/client/${id}`,
+  const formatUpdatedPartnerData = (partnerData: UpdatePartnerFormSchema): UpdatePartnerDataToSendToApi => ({
+    ...partnerData,
+    managerPhoneNumber: partnerData.managerPhoneNumber && partnerData.managerPhoneNumber
+      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
+    businessPhoneNumber: partnerData.businessPhoneNumber && partnerData.businessPhoneNumber
+      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
+      isOnline: partnerData.isOnline === 'true',
+      categoryId: parseInt(partnerData.categoryId as string || '')
+  })
+
+  const updatePartner = async (partner: UpdatePartnerFormSchema) => {
+    const formattedPartner = formatUpdatedPartnerData(partner)
+
+    const response = await sendRequest<{ partner: IPartnerDetailedFromAPI }>({
+      endpoint: `/partner/${params.id}`,
+      method: 'PATCH',
+      data: formattedPartner,
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    fetchPartner(params.id as string)
+  }
+
+  const activatePartner = async (id: string) => {
+    const response = await sendRequest({
+      endpoint: `/partner/${id}/activate`,
+      method: 'PATCH',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchPartner(id)
+  }
+
+  const inactivatePartner = async (id: string) => {
+    const response = await sendRequest({
+      endpoint: `/partner/${id}/inactivate`,
+      method: 'PATCH',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchPartner(id)
+  }
+
+  const deletePartner = async (id: string) => {
+    const response = await sendRequest({
+      endpoint: `/partner/${id}/delete`,
+      method: 'PATCH',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchPartner(id)
+  }
+
+  const fetchPartner = async (id: string) => {
+    const response = await sendRequest<{ partner: IPartnerDetailedFromAPI }>({
+      endpoint: `/partner/${id}`,
       method: 'GET',
     })
 
@@ -192,212 +363,38 @@ export default function ClientDetailsPage() {
         variant: 'destructive'
       })
 
-      setClientDetailed(null)
+      setPartnerDetailed(null)
 
       return
     }
 
-    fillUpdateForm(response.data.client)
+    fillUpdateForm(response.data.partner)
 
-    const formattedClient = formatClientDetailed(response.data.client)
+    const formattedPartner = formatPartnerDetailed(response.data.partner)
 
-    setClientDetailed(formattedClient)
-  }
-
-  const formatUpdatedClientData = (clientData: UpdateClientFormSchema): UpdateClientFormSchema => ({
-    ...clientData,
-    managerPhoneNumber: clientData.managerPhoneNumber && clientData.managerPhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
-    financePhoneNumber: clientData.financePhoneNumber && clientData.financePhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
-  })
-
-  const updateClient = async (client: UpdateClientFormSchema) => {
-    const formattedClient = formatUpdatedClientData(client)
-
-    const response = await sendRequest<{ client: CLientDetailedFromAPI }>({
-      endpoint: `/client/${params.id}`,
-      method: 'PATCH',
-      data: formattedClient,
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    fetchClient(params.id as string)
-  }
-
-  const activateClient = async (id: string) => {
-    const response = await sendRequest({
-      endpoint: `/client/${id}/activate`,
-      method: 'PATCH',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-
-    fetchClient(id)
-  }
-
-  const inactivateClient = async (id: string) => {
-    const response = await sendRequest({
-      endpoint: `/client/${id}/inactivate`,
-      method: 'PATCH',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-
-    fetchClient(id)
-  }
-
-  const deleteClient = async (id: string) => {
-    const response = await sendRequest({
-      endpoint: `/client/${id}/delete`,
-      method: 'PATCH',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-
-    fetchClient(id)
-  }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-
-    if (files && files.length > 0) {
-      const file = files[0]
-
-      if (file.type === "text/csv") {
-        setFileSelected(file)
-      } else {
-        toast({
-          description: "O arquivo selecionado não tem a extensão .csv",
-          variant: "destructive"
-        })
-        setFileSelected(null)
-      }
-    }
-  }
-
-  const sendCSVToCreateMembers = async (file: File) => {
-    const formData = new FormData()
-    formData.append("file", file)
-
-    const response = await sendRequest({
-      endpoint: `/member/${params.id}/create-members-in-bulk`,
-      method: 'POST',
-      data: formData,
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-  
+    setPartnerDetailed(formattedPartner)
   }
 
   useEffect(() => {
-    if (fileSelected) {
-      sendCSVToCreateMembers(fileSelected)
-    }
-  }, [fileSelected])
-
-  useEffect(() => {
-    if (params.id) fetchClient(params.id as string)
+    if (params.id) fetchPartner(params.id as string)
   } , [params.id])
 
   return (
     <DashboardLayout
-      // secondaryText={`Economia Total: ${clientDetailed?.totalSavings || ''}`}
-      title={`${clientDetailed?.fantasyName || ''}`}
+      // secondaryText={`Economia Total: ${partnerDetailed?.totalSavings || ''}`}
+      title={`${partnerDetailed?.fantasyName || ''}`}
     >
       <div className="flex justify-between w-full">
-        <div className="flex gap-4">
-          <Label
-            htmlFor="file-input"
-            className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
-          >
-            Cadastrar Associados em Lote
-          </Label>
-          <Input
-            accept=".csv"
-            disabled={clientDetailed?.status !== STATUS[1]}
-            className="hidden"
-            id="file-input"
-            onChange={handleFileChange}
-            type="file"
-            multiple={false}
-            placeholder='Cadastrar Associados em Lote'
-          />
-          <Button
-            disabled={clientDetailed?.status !== STATUS[1]}
-            onClick={() => push(`/painel/clientes/${params.id}/cadastrar-associado`)}
-            variant="secondary"
-          >
-            Cadastrar Um Associado
-          </Button>
-        </div>
-
-        <div className="flex gap-4">
+        <div className="flex gap-4 justify-end w-full">
           {
-            clientDetailed?.status === STATUS[1] && (
+            partnerDetailed?.status === STATUS[1] && (
               <AlertDialog>
                 <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Todos os associados do cliente também serão inativados!
+                      Todos os benefícios do estabelecimento também serão inativados!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
                       Essa ação poderá ser desfeita.
@@ -405,7 +402,7 @@ export default function ClientDetailsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button onClick={() => inactivateClient(clientDetailed.id)}>
+                    <Button onClick={() => inactivatePartner(partnerDetailed.id)}>
                       Inativar
                     </Button>
                   </AlertDialogFooter>
@@ -414,14 +411,14 @@ export default function ClientDetailsPage() {
             )
           }
           {
-            clientDetailed?.status === STATUS[2] && (
+            partnerDetailed?.status === STATUS[2] && (
               <AlertDialog>
                 <AlertDialogTrigger className='uppercase px-8 h-9 rounded-md text-sm font-medium border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Todos os associados do cliente também serão ativados!
+                      Todos os benefícios do estabelecimento também serão ativados!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
                       Essa ação poderá ser desfeita.
@@ -429,7 +426,7 @@ export default function ClientDetailsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button onClick={() => activateClient(clientDetailed.id)}>
+                    <Button onClick={() => activatePartner(partnerDetailed.id)}>
                       Ativar
                     </Button>
                   </AlertDialogFooter>
@@ -438,21 +435,22 @@ export default function ClientDetailsPage() {
             )
           }
           {
-            clientDetailed
+            partnerDetailed
             && (
               <AlertDialog>
                 <AlertDialogTrigger title='Editar' className='rounded-md w-9 h-9 bg-primary text-white flex flex-col justify-center'>
                   <Pencil  className='mx-auto'/>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogTitle>Editar Cliente</AlertDialogTitle>
+                <AlertDialogContent className='max-h-screen overflow-y-auto'>
+                  <AlertDialogTitle>Editar estabelecimento</AlertDialogTitle>
                   <Form { ...form }>
                     <form
                       className='flex flex-col gap-4'
-                      onSubmit={form.handleSubmit((data) => updateClient(data))}
+                      onSubmit={form.handleSubmit((data) => updatePartner(data))}
                     >
+
                       <DetailsRow>
-                        <InputContainer size="w-1/2">
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="fantasyName">Nome Fantasia</Label>
                           <Input className="bg-white" { ...form.register("fantasyName") } />
                           {
@@ -460,7 +458,7 @@ export default function ClientDetailsPage() {
                               && <span className="text-red-500 text-xs">{form.formState.errors.fantasyName.message}</span>
                           }
                         </InputContainer>
-                        <InputContainer size="w-1/2">
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="corporateName">Razão Social</Label>
                           <Input className="bg-white" { ...form.register("corporateName") } />
                           {
@@ -471,15 +469,76 @@ export default function ClientDetailsPage() {
                       </DetailsRow>
 
                       <DetailsRow>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="segment">Segmento</Label>
-                          <Input className="bg-white" { ...form.register("segment") } />
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="categoryId">Categoria</Label>
+                          <FormField
+                            control={form.control}
+                            name="categoryId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="none" disabled></SelectItem>
+                                    <SelectItem value="1">Gastronomia</SelectItem>
+                                    <SelectItem value="2">Vestuário / Moda</SelectItem>
+                                    <SelectItem value="3">Hospedagem</SelectItem>
+                                    <SelectItem value="4">Automotivo</SelectItem>
+                                    <SelectItem value="5">Beleza e estética</SelectItem>
+                                    <SelectItem value="6">Eletrodomésticos</SelectItem>
+                                    <SelectItem value="7">Serviços</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
                           {
-                            form.formState.errors.segment
-                              && <span className="text-red-500 text-xs">{form.formState.errors.segment.message}</span>
+                            form.formState.errors.categoryId
+                              && <span className="text-red-500 text-xs">{form.formState.errors.categoryId.message}</span>
                           }
                         </InputContainer>
-                        <InputContainer size="w-1/2">
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="tags">Tags</Label>
+                          <Input className="bg-white" { ...form.register("tags") } placeholder="Tags sepadas por vírgula" />
+                          {
+                            form.formState.errors.tags
+                              && <span className="text-red-500 text-xs">{form.formState.errors.tags.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="isOnline">Online</Label>
+                          <FormField
+                            control={form.control}
+                            name="isOnline"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="true">Sim</SelectItem>
+                                    <SelectItem value="false">Não</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                          {
+                            form.formState.errors.isOnline
+                              && <span className="text-red-500 text-xs">{form.formState.errors.isOnline.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="contractUrl">URL do Contrato</Label>
                           <Input className="bg-white" { ...form.register("contractUrl") } />
                           {
@@ -487,43 +546,62 @@ export default function ClientDetailsPage() {
                               && <span className="text-red-500 text-xs">{form.formState.errors.contractUrl.message}</span>
                           }
                         </InputContainer>
-                      </DetailsRow>
-
-                      <DetailsRow>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="lumpSum">Valor do Boleto</Label>
-                          <CurrencyInput
-                            { ...form.register("lumpSum") }
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="businessPhoneNumber">Telefone Comercial</Label>
+                          <InputMask
                             className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            allowNegativeValue={false}
-                            fixedDecimalLength={2}
-                            disableGroupSeparators={true}
-                            placeholder="00.00"
+                            mask="(99) 99999-9999"
+                            { ...form.register("businessPhoneNumber") }
                           />
                           {
-                            form.formState.errors.lumpSum
-                              && <span className="text-red-500 text-xs">{form.formState.errors.lumpSum.message}</span>
+                            form.formState.errors.businessPhoneNumber
+                              && <span className="text-red-500 text-xs">{form.formState.errors.businessPhoneNumber.message}</span>
                           }
                         </InputContainer>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="unitValue">Valor Unitário</Label>
-                          <CurrencyInput
-                            { ...form.register("unitValue") }
-                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            allowNegativeValue={false}
-                            fixedDecimalLength={2}
-                            disableGroupSeparators={true}
-                            placeholder="00.00"
-                          />
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="openingHours">Horário de Funcionamento</Label>
+                          <Input className="bg-white" { ...form.register("openingHours") } />
                           {
-                            form.formState.errors.unitValue
-                              && <span className="text-red-500 text-xs">{form.formState.errors.unitValue.message}</span>
+                            form.formState.errors.openingHours
+                              && <span className="text-red-500 text-xs">{form.formState.errors.openingHours.message}</span>
                           }
                         </InputContainer>
                       </DetailsRow>
 
                       <DetailsRow>
-                        <InputContainer size="w-1/2">
+                        <InputContainer>
+                          <Label htmlFor="instagram">Instagram</Label>
+                          <Input className="bg-white" { ...form.register("instagram") } />
+                          {
+                            form.formState.errors.instagram
+                              && <span className="text-red-500 text-xs">{form.formState.errors.instagram.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer>
+                        <Label htmlFor="webpage">Página Oficial</Label>
+                          <Input className="bg-white" { ...form.register("webpage") } />
+                          {
+                            form.formState.errors.webpage
+                              && <span className="text-red-500 text-xs">{form.formState.errors.webpage.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer>
+                          <Label htmlFor="about">Sobre</Label>
+                          <Input className="bg-white text-wrap" { ...form.register("about") } />
+                          {
+                            form.formState.errors.about
+                              && <span className="text-red-500 text-xs">{form.formState.errors.about.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <Separator />
+
+                      <DetailsRow>
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="managerName">Nome do Responsável</Label>
                           <Input className="bg-white" { ...form.register("managerName") } />
                           {
@@ -531,7 +609,7 @@ export default function ClientDetailsPage() {
                               && <span className="text-red-500 text-xs">{form.formState.errors.managerName.message}</span>
                           }
                         </InputContainer>
-                        <InputContainer size="w-1/2">
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="managerEmail">E-mail do Responsável</Label>
                           <Input className="bg-white" { ...form.register("managerEmail") } />
                           {
@@ -539,10 +617,7 @@ export default function ClientDetailsPage() {
                               && <span className="text-red-500 text-xs">{form.formState.errors.managerEmail.message}</span>
                           }
                         </InputContainer>
-                      </DetailsRow>
-
-                      <DetailsRow>
-                        <InputContainer size="w-1/2">
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="managerPhoneNumber">Telefone do Responsável</Label>
                           <InputMask
                             className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -554,22 +629,12 @@ export default function ClientDetailsPage() {
                               && <span className="text-red-500 text-xs">{form.formState.errors.managerPhoneNumber.message}</span>
                           }
                         </InputContainer>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="financePhoneNumber">Telefone do Financeiro</Label>
-                          <InputMask
-                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            mask="(99) 99999-9999"
-                            { ...form.register("financePhoneNumber",) }
-                          />
-                          {
-                            form.formState.errors.financePhoneNumber
-                              && <span className="text-red-500 text-xs">{form.formState.errors.financePhoneNumber.message}</span>
-                          }
-                        </InputContainer>
                       </DetailsRow>
 
+                      <Separator />
+
                       <DetailsRow>
-                        <InputContainer size="w-full">
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="address">Endereço</Label>
                           <Input className="bg-white" { ...form.register("address") } />
                           {
@@ -577,10 +642,7 @@ export default function ClientDetailsPage() {
                               && <span className="text-red-500 text-xs">{form.formState.errors.address.message}</span>
                           }
                         </InputContainer>
-                      </DetailsRow>
-
-                      <DetailsRow>
-                        <InputContainer size="w-1/2">
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="city">Cidade</Label>
                           <Input className="bg-white" { ...form.register("city") } />
                           {
@@ -588,7 +650,7 @@ export default function ClientDetailsPage() {
                               && <span className="text-red-500 text-xs">{form.formState.errors.city.message}</span>
                           }
                         </InputContainer>
-                        <InputContainer size="w-1/2">
+                        <InputContainer size="w-1/3">
                           <Label htmlFor="state">Estado</Label>
                           <InputMask
                             className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
@@ -601,6 +663,109 @@ export default function ClientDetailsPage() {
                           }
                         </InputContainer>
                       </DetailsRow>
+
+                      <Separator />
+
+                      <DetailsRow>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="benefit1Title">Título do Benefício 1</Label>
+                          <Input className="bg-white" { ...form.register("benefit1Title") } />
+                          {
+                            form.formState.errors.benefit1Title
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit1Title.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="benefit1Link">Link do Benefício 1</Label>
+                          <Input className="bg-white" { ...form.register("benefit1Link") } />
+                          {
+                            form.formState.errors.benefit1Link
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit1Link.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="benefit1Voucher">Voucher do Benefício 1</Label>
+                          <Input className="bg-white" { ...form.register("benefit1Voucher") } />
+                          {
+                            form.formState.errors.benefit1Voucher
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit1Voucher.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer>
+                          <Label htmlFor="benefit1Rules">Regras do Benefício 1</Label>
+                          <Input className="bg-white text-wrap" { ...form.register("benefit1Rules") } />
+                          {
+                            form.formState.errors.benefit1Rules
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit1Rules.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer>
+                          <Label htmlFor="benefit1Description">Descrição do Benefício 1</Label>
+                          <Input className="bg-white text-wrap" { ...form.register("benefit1Description") } />
+                          {
+                            form.formState.errors.benefit1Description
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit1Description.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <Separator />
+
+                      <DetailsRow>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="benefit2Title">Título do Benefício 2</Label>
+                          <Input className="bg-white" { ...form.register("benefit2Title") } />
+                          {
+                            form.formState.errors.benefit2Title
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit2Title.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="benefit2Link">Link do Benefício 2</Label>
+                          <Input className="bg-white" { ...form.register("benefit2Link") } />
+                          {
+                            form.formState.errors.benefit2Link
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit2Link.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="benefit2Voucher">Voucher do Benefício 2</Label>
+                          <Input className="bg-white" { ...form.register("benefit2Voucher") } />
+                          {
+                            form.formState.errors.benefit2Voucher
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit2Voucher.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer>
+                          <Label htmlFor="benefit2Rules">Regras do Benefício 2</Label>
+                          <Input className="bg-white text-wrap" { ...form.register("benefit2Rules") } />
+                          {
+                            form.formState.errors.benefit2Rules
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit2Rules.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer>
+                          <Label htmlFor="benefit2Description">Descrição do Benefício 2</Label>
+                          <Input className="bg-white text-wrap" { ...form.register("benefit2Description") } />
+                          {
+                            form.formState.errors.benefit2Description
+                              && <span className="text-red-500 text-xs">{form.formState.errors.benefit2Description.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
                       <AlertDialogFooter>
                         <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
                         <AlertDialogAction type="submit" disabled={!form.formState.isValid}>
@@ -614,8 +779,8 @@ export default function ClientDetailsPage() {
             )
           }
           {
-            clientDetailed
-            && [STATUS[1], STATUS[2]].includes(clientDetailed.status as string)
+            partnerDetailed
+            && [STATUS[1], STATUS[2]].includes(partnerDetailed.status as string)
             && (
               <AlertDialog>
                 <AlertDialogTrigger title='Excluir' className='rounded-md w-9 h-9 bg-destructive text-white flex flex-col justify-center'>
@@ -625,7 +790,7 @@ export default function ClientDetailsPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Todos os associados do cliente também serão excluídos!
+                      Todos os benefícios do estabelecimento também serão excluídos!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
                       A operação <strong className='text-black'>não</strong> poderá ser desfeita!
@@ -633,7 +798,7 @@ export default function ClientDetailsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button variant="destructive" onClick={() => deleteClient(clientDetailed.id)}>
+                    <Button variant="destructive" onClick={() => deletePartner(partnerDetailed.id)}>
                       Excluir
                     </Button>
                   </AlertDialogFooter>
@@ -646,51 +811,125 @@ export default function ClientDetailsPage() {
 
       <div className='bg-white border rounded-md p-4 flex flex-col gap-4'>
         <DetailsRow>
-          <DetailsField label="Nome Fantasia" value={clientDetailed?.fantasyName} />
-          <DetailsField label="Razão Social" value={clientDetailed?.corporateName} />
-          <DetailsField label="CNPJ" value={clientDetailed?.cnpj} />
+          <DetailsField label="Nome Fantasia" value={partnerDetailed?.fantasyName} />
+          <DetailsField label="Razão Social" value={partnerDetailed?.corporateName} />
+          <DetailsField label="CNPJ" value={partnerDetailed?.cnpj} />
         </DetailsRow>
 
         <DetailsRow>
-          <DetailsField label="Segmento" value={clientDetailed?.segment} />
-          <DetailsField label="Status" value={clientDetailed?.status} />
-          <DetailsField label="Data do Cadastro" value={clientDetailed?.createdAt} />
+          <DetailsField label="Categoria" value={partnerDetailed?.category.name} />
+          <DetailsField label="Tags" value={partnerDetailed?.tags} />
+          <DetailsField label="Online" value={partnerDetailed?.isOnline ? 'Sim' : 'Não'} />
         </DetailsRow>
 
         <DetailsRow>
-          <DetailsField label="Valor do Boleto" value={clientDetailed?.lumpSum} width="min-w-52 w-full" />
-          <DetailsField label="Valor Unitário" value={clientDetailed?.unitValue} width="min-w-52 w-full" />
+          <DetailsField label="Status" value={partnerDetailed?.status} />
+          <DetailsField label="Data do Cadastro" value={partnerDetailed?.createdAt} />
+          <DetailsField label="Telefone Comercial" value={partnerDetailed?.businessPhoneNumber} />
+        </DetailsRow>
+
+        <DetailsRow>
           <DetailsField label="URL do Contrato">
             <Link
               className="text-primary font-semibold"
-              href={clientDetailed?.contractUrl || ''}
+              href={partnerDetailed?.contractUrl || ''}
               rel="noreferrer noopener"
               referrerPolicy="no-referrer"
               target="_blank"
             >
-              {clientDetailed?.contractUrl}
+              {partnerDetailed?.contractUrl}
             </Link>
           </DetailsField>
+          <DetailsField label="Página Oficial">
+            <Link
+              className="text-primary font-semibold"
+              href={partnerDetailed?.webpage || ''}
+              rel="noreferrer noopener"
+              referrerPolicy="no-referrer"
+              target="_blank"
+            >
+              {partnerDetailed?.webpage}
+            </Link>
+          </DetailsField>
+          <DetailsField label="Instagram" value={partnerDetailed?.instagram} />
+        </DetailsRow>
+
+        <DetailsRow>
+          <DetailsField label="Imagem">
+            <Link
+              className="text-primary font-semibold"
+              href={partnerDetailed?.image || ''}
+              rel="noreferrer noopener"
+              referrerPolicy="no-referrer"
+              target="_blank"
+            >
+              {partnerDetailed?.image}
+            </Link>
+          </DetailsField>
+          <DetailsField label="Logo">
+            <Link
+              className="text-primary font-semibold"
+              href={partnerDetailed?.logo || ''}
+              rel="noreferrer noopener"
+              referrerPolicy="no-referrer"
+              target="_blank"
+            >
+              {partnerDetailed?.logo}
+            </Link>
+          </DetailsField>
+          <DetailsField label="Horário de Funcionamento" value={partnerDetailed?.openingHours} />
+        </DetailsRow>
+
+        <DetailsRow>
+          <DetailsField label="Sobre" value={partnerDetailed?.about} />
         </DetailsRow>
 
         <Separator />
 
         <DetailsRow>
-          <DetailsField label="Nome do Responsável" value={clientDetailed?.managerName} />
-          <DetailsField label="E-mail do Responsável" value={clientDetailed?.managerEmail} />
-        </DetailsRow>
-
-        <DetailsRow>
-          <DetailsField label="Telefone do Responável" value={clientDetailed?.managerPhoneNumber} width="min-w-52 w-full" />
-          <DetailsField label="Telefone do Financeiro" value={clientDetailed?.financePhoneNumber} width="min-w-52 w-full" />
+          <DetailsField label="Nome do Responsável" value={partnerDetailed?.managerName} />
+          <DetailsField label="E-mail do Responsável" value={partnerDetailed?.managerEmail} />
+          <DetailsField label="Telefone do Responável" value={partnerDetailed?.managerPhoneNumber} width="min-w-52 w-full" />
         </DetailsRow>
 
         <Separator />
 
         <DetailsRow>
-          <DetailsField label="Endereço" value={clientDetailed?.address} />
-          <DetailsField label="Cidade" value={clientDetailed?.city} width="min-w-60" />
-          <DetailsField label="Estado" value={clientDetailed?.state} width="min-w-28" />
+          <DetailsField label="Endereço" value={partnerDetailed?.address} />
+          <DetailsField label="Cidade" value={partnerDetailed?.city} width="min-w-60" />
+          <DetailsField label="Estado" value={partnerDetailed?.state} width="min-w-28" />
+        </DetailsRow>
+
+        <Separator />
+
+        <DetailsRow>
+          <DetailsField label="Título do Benefício 1" value={partnerDetailed?.benefit1Title} />
+          <DetailsField label="Voucher do Benefício 1" value={partnerDetailed?.benefit1Link} />
+          <DetailsField label="Link do Benefício 1" value={partnerDetailed?.benefit1Voucher} width="min-w-52 w-full" />
+        </DetailsRow>
+
+        <DetailsRow>
+          <DetailsField label="Descrição do Benefício 1" value={partnerDetailed?.benefit1Description} />
+        </DetailsRow>
+
+        <DetailsRow>
+          <DetailsField label="Regras do Benefício 1" value={partnerDetailed?.benefit1Rules} />
+        </DetailsRow>
+
+        <Separator />
+
+        <DetailsRow>
+          <DetailsField label="Título do Benefício 2" value={partnerDetailed?.benefit2Title} />
+          <DetailsField label="Voucher do Benefício 2" value={partnerDetailed?.benefit2Link} />
+          <DetailsField label="Link do Benefício 2" value={partnerDetailed?.benefit2Voucher} width="min-w-52 w-full" />
+        </DetailsRow>
+
+        <DetailsRow>
+          <DetailsField label="Descrição do Benefício 2" value={partnerDetailed?.benefit2Description} />
+        </DetailsRow>
+
+        <DetailsRow>
+          <DetailsField label="Regras do Benefício 2" value={partnerDetailed?.benefit2Rules} />
         </DetailsRow>
       </div>
     </DashboardLayout>
