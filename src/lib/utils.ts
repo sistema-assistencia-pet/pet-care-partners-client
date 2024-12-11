@@ -17,7 +17,8 @@ export const captalize = (word: string): string => word.toLowerCase().split(` `)
 
 export const formatDateTime = (date: string): string => new Date(date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 
-export const formatBirthdate = (date: string): string => date.split('-').reverse().join('/')
+// export const formatBirthdate = (date: string): string => date.split('-').reverse().join('/')
+export const formatBirthdate = (date: string): string => date
 
 export const formatPhoneNumber = (phoneNumber: string): string => `(${phoneNumber.slice(0, 2)}) ${phoneNumber.length === 10 ? `${phoneNumber.slice(2, 6)}-${phoneNumber.slice(6, 10)}` : `${phoneNumber.slice(2, 7)}-${phoneNumber.slice(7, 11)}`}`
 
