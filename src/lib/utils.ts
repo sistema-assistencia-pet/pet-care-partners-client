@@ -13,6 +13,14 @@ export const applyCpfMask = (cpf: string): string => cpf.slice(0, 3) + `.` + cpf
 
 export const removeCpfMask = (cpf: string): string => cpf.replaceAll('.', '').replaceAll('-', '')
 
+export const applyPhoneNumberMask = (phoneNumber: string): string => `(${phoneNumber.slice(0, 2)}) ${phoneNumber.length === 10 ? `${phoneNumber.slice(2, 6)}-${phoneNumber.slice(6, 10)}` : `${phoneNumber.slice(2, 7)}-${phoneNumber.slice(7, 11)}`}`
+
+export const leaveOnlyDigits = (value: string): string => value.replace(/[^0-9]/g, ``)
+
+export const removeSpecialCharacters = (value: string): string => {
+  return value.replace(/[^a-zA-Z0-9]/g, '');
+};
+
 export const captalize = (word: string): string => word.toLowerCase().split(` `).map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(` `)
 
 export const formatDateTime = (date: string): string => new Date(date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
@@ -20,11 +28,9 @@ export const formatDateTime = (date: string): string => new Date(date).toLocaleS
 // export const formatBirthdate = (date: string): string => date.split('-').reverse().join('/')
 export const formatBirthdate = (date: string): string => date
 
-export const formatPhoneNumber = (phoneNumber: string): string => `(${phoneNumber.slice(0, 2)}) ${phoneNumber.length === 10 ? `${phoneNumber.slice(2, 6)}-${phoneNumber.slice(6, 10)}` : `${phoneNumber.slice(2, 7)}-${phoneNumber.slice(7, 11)}`}`
-
 export const formatCurrency = (value: number): string => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
-export const applyCepMask = (cep: string): string => cep.slice(0, 6) + `-` + cep.slice(6, 8)
+export const applyCepMask = (cep: string): string => cep.slice(0, 5) + `-` + cep.slice(5, 8)
 
 export const applyCurrencyMaskReturningString = (value: string): string => {
   return value.replace(/[^\d,]/g, '')

@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { applyCnpjMask, captalize, formatCurrency, formatDateTime, formatPhoneNumber } from '@/lib/utils'
+import { applyCnpjMask, captalize, formatCurrency, formatDateTime, applyPhoneNumberMask } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import CurrencyInput from 'react-currency-input-field'
 import DashboardLayout from '@/components/DashboardLayout'
@@ -155,8 +155,8 @@ export default function ClientDetailsPage() {
     state: client.state.toLocaleUpperCase(),
     city: captalize(client.city),
     managerName: captalize(client.managerName),
-    managerPhoneNumber: formatPhoneNumber(client.managerPhoneNumber),
-    financePhoneNumber: formatPhoneNumber(client.financePhoneNumber),
+    managerPhoneNumber: applyPhoneNumberMask(client.managerPhoneNumber),
+    financePhoneNumber: applyPhoneNumberMask(client.financePhoneNumber),
     lumpSum: client.lumpSum === 0 ? '-' : formatCurrency(client.lumpSum),
     unitValue: client.unitValue === 0 ? '-' : formatCurrency(client.unitValue),
     totalSavings: formatCurrency(client.totalSavings),

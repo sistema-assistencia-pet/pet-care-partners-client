@@ -3,7 +3,6 @@
 import { type ColumnDef } from "@tanstack/react-table"
 import { useForm } from 'react-hook-form'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { v4 as uuid } from 'uuid'
 
 import {
@@ -22,6 +21,7 @@ import { DataTable } from '../../../components/DataTable'
 import { FilterX, Pencil, Trash } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Pagination,
   PaginationContent,
@@ -37,64 +37,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { PAGINATION_LIMIT, SELECT_DEFAULT_VALUE } from '@/lib/constants'
 import { sendRequest } from '@/lib/sendRequest'
+import { STATE } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { STATES } from '@/lib/enums'
-import { Label } from '@/components/ui/label'
-
-interface ICity {
-  id: number
-  name: string
-  stateId: number
-}
-
-interface ICityToBeDisplayed {
-  id: number
-  name: string
-  state: string
-}
-
-interface IFilterFormValues {
-  searchInput: string
-  stateId: number
-}
-
-interface INewCityFormValues {
-  name: string
-  stateId: number
-}
-
-const PAGINATION_LIMIT = 10
-const FILTER_FORM_DEFAULT_VALUES: IFilterFormValues = {
-  searchInput: '',
-  stateId: 0
-}
-const NEW_CITY_FORM_DEFAULT_VALUES: INewCityFormValues = {
-  name: '',
-  stateId: 0
-}
 
 export default function CitiesPage() {
-  const [cities, setCities] = useState<ICityToBeDisplayed[]>([])
-  const [citiesCount, setCitiesCount] = useState<number>(0)
-  const [skip, setSkip] = useState<number>(0)
-  const [page, setPage] = useState<number>(1)
-  const [query, setQuery] = useState<URLSearchParams | null>(null)
-  const [cityToBeUpdatedName, setCityToBeUpdatedName] = useState<string>('')
-  const [isUpdateCityDialogOpen, setIsUpdateCityDialogOpen] = useState(false);
-  const [cityBeingUpdatedId, setCityBeingUpdatedId] = useState<number | null>(null)
-  const [isDeleteCityDialogOpen, setIsDeleteCityDialogOpen] = useState(false);
-  const [cityBeingDeletedId, setCityBeingDeletedId] = useState<number | null>(null)
-
-  const filterForm = useForm<IFilterFormValues>({
-    mode: 'onSubmit',
-    defaultValues: FILTER_FORM_DEFAULT_VALUES
-  })
-
-  const newCityForm = useForm<INewCityFormValues>({
-    mode: 'onSubmit',
-    defaultValues: NEW_CITY_FORM_DEFAULT_VALUES
-  })
+  // --------------------------- PAGE SETUP ---------------------------
+  interface ICity {
+    id: number
+    name: string
+    stateId: number
+  }
+  
+  interface ICityToBeDisplayed {
+    id: number
+    name: string
+    state: string
+  }
 
   const { toast } = useToast()
 
@@ -135,37 +95,30 @@ export default function CitiesPage() {
     }
   ]
 
-  const handleNextPagination = () => {
-    setSkip((prev) => prev + PAGINATION_LIMIT)
-    setPage((prev) => prev + 1)
+  // --------------------------- FILTER ---------------------------
+  interface IFilterFormValues {
+    searchInput: string
+    stateId: string
   }
 
-  const handlePreviousPagination = () => {
-    setSkip((prev) => prev - PAGINATION_LIMIT)
-    setPage((prev) => prev - 1)
+  const FILTER_FORM_DEFAULT_VALUES: IFilterFormValues = {
+    searchInput: '',
+    stateId: SELECT_DEFAULT_VALUE
   }
 
-  const handleResetPagination = () => {
-    setSkip(0)
-    setPage(1)
-  }
+  const [query, setQuery] = useState<URLSearchParams | null>(null)
 
-  const formatCities = (cities: ICity[]): ICityToBeDisplayed[] => {
-    return cities.map((city) => {
-      return {
-        id: city.id,
-        name: city.name,
-        state: STATES[city.stateId]
-      }
-    })
-  }
+  const filterForm = useForm<IFilterFormValues>({
+    mode: 'onSubmit',
+    defaultValues: FILTER_FORM_DEFAULT_VALUES
+  })
 
   const submitFilter = async (data: IFilterFormValues) => {
     const { searchInput, stateId } = data
     const query = new URLSearchParams()
 
     if (searchInput) query.append('search-input', searchInput)
-    if (stateId && stateId != 0) query.append('state-id', stateId.toString())
+    if (stateId && stateId != SELECT_DEFAULT_VALUE) query.append('state-id', stateId)
 
     setQuery(query)
     await fetchCities(query)
@@ -179,6 +132,20 @@ export default function CitiesPage() {
     setPage(1)
 
     fetchCities()
+  }
+
+  // --------------------------- FETCH CITIES ---------------------------
+  const [cities, setCities] = useState<ICityToBeDisplayed[]>([])
+  const [citiesCount, setCitiesCount] = useState<number>(0)
+
+  const formatCities = (cities: ICity[]): ICityToBeDisplayed[] => {
+    return cities.map((city) => {
+      return {
+        id: city.id,
+        name: city.name,
+        state: STATE[city.stateId]
+      }
+    })
   }
 
   const fetchCities = async (query?: URLSearchParams) => {
@@ -204,6 +171,58 @@ export default function CitiesPage() {
     setCities(formattedCities)
     setCitiesCount(parseInt(response.headers[`x-total-count`]))
   }
+
+  // --------------------------- CREATE CITY ---------------------------
+  interface INewCityFormValues {
+    name: string
+    stateId: string
+  }
+  
+  const NEW_CITY_FORM_DEFAULT_VALUES: INewCityFormValues = {
+    name: '',
+    stateId: SELECT_DEFAULT_VALUE
+  }
+
+  const newCityForm = useForm<INewCityFormValues>({
+    mode: 'onSubmit',
+    defaultValues: NEW_CITY_FORM_DEFAULT_VALUES
+  })
+
+  const submitNewCity = async (data: INewCityFormValues) => {
+    const { name, stateId } = data
+    const query = new URLSearchParams()
+
+    if (name) query.append('search-input', name)
+    if (stateId && stateId != SELECT_DEFAULT_VALUE) query.append('state-id', stateId)
+
+    const response = await sendRequest<{ cityId: string }>({
+      endpoint: '/city',
+      method: 'POST',
+      data: { name, stateId }
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: 'success'
+    })
+
+    fetchCities()
+    newCityForm.reset(NEW_CITY_FORM_DEFAULT_VALUES)
+  }
+
+  // --------------------------- UPDATE CITY ---------------------------
+  const [cityToBeUpdatedName, setCityToBeUpdatedName] = useState<string>('')
+  const [isUpdateCityDialogOpen, setIsUpdateCityDialogOpen] = useState(false);
+  const [cityBeingUpdatedId, setCityBeingUpdatedId] = useState<number | null>(null)
 
   const startCityUpdateProcess = (cityId: number) => {
     setCityBeingUpdatedId(cityId)
@@ -239,6 +258,10 @@ export default function CitiesPage() {
     setIsUpdateCityDialogOpen(false)
   }
 
+  // --------------------------- DELETE CITY ---------------------------
+  const [isDeleteCityDialogOpen, setIsDeleteCityDialogOpen] = useState(false);
+  const [cityBeingDeletedId, setCityBeingDeletedId] = useState<number | null>(null)
+
   const startCityDeleteProcess = (cityId: number) => {
     setCityBeingDeletedId(cityId)
     setIsDeleteCityDialogOpen(true)
@@ -269,44 +292,34 @@ export default function CitiesPage() {
     setIsDeleteCityDialogOpen(false)
   }
 
-  const submitNewCity = async (data: INewCityFormValues) => {
-    const { name, stateId } = data
-    const query = new URLSearchParams()
+  // --------------------------- PAGINATION ---------------------------
+  const [skip, setSkip] = useState<number>(0)
+  const [page, setPage] = useState<number>(1)
 
-    if (name) query.append('search-input', name)
-    if (stateId && stateId != 0) query.append('state-id', stateId.toString())
-
-    const response = await sendRequest<{ cityId: string }>({
-      endpoint: '/city',
-      method: 'POST',
-      data: { name, stateId }
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: 'success'
-    })
-
-    fetchCities()
-    newCityForm.reset(NEW_CITY_FORM_DEFAULT_VALUES)
+  const handleNextPagination = () => {
+    setSkip((prev) => prev + PAGINATION_LIMIT)
+    setPage((prev) => prev + 1)
   }
 
-  // Carrega lista de cidades
+  const handlePreviousPagination = () => {
+    setSkip((prev) => prev - PAGINATION_LIMIT)
+    setPage((prev) => prev - 1)
+  }
+
+  const handleResetPagination = () => {
+    setSkip(0)
+    setPage(1)
+  }
+
+  // --------------------------- USE EFFECT ---------------------------
+  // Carrega lista de cidades quando a página carrega ou a paginação muda
   useEffect(() => {
     if (query) {
       fetchCities(query)
     } else fetchCities()
   }, [skip])
 
+  // --------------------------- RETURN ---------------------------
   return (
     <DashboardLayout
       secondaryText={`Total: ${citiesCount} cidades`}
@@ -339,7 +352,7 @@ export default function CitiesPage() {
                         name="stateId"
                         render={({ field }) => (
                           <FormItem>
-                            <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger className="w-28">
                                   <SelectValue placeholder="Estado" />
@@ -347,9 +360,13 @@ export default function CitiesPage() {
                               </FormControl>
                               <SelectContent>
                                 {
-                                  Object.entries(STATES).filter(([key, _value]) => isNaN(Number(key))).map(([key, value]) => (
-                                    <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
-                                  ))
+                                  Object
+                                    .entries(STATE)
+                                    .filter(([key, _value]) => isNaN(Number(key)))
+                                    .map(([key, value]) => (
+                                      <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                                    )
+                                  )
                                 }
                               </SelectContent>
                             </Select>
@@ -434,7 +451,7 @@ export default function CitiesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* filter */}
+      {/* Filter */}
       <Form { ...filterForm }>
         <form
           className='flex flex-row gap-4'
@@ -453,18 +470,22 @@ export default function CitiesPage() {
               name="stateId"
               render={({ field }) => (
                 <FormItem>
-                  <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-28">
                         <SelectValue placeholder="Estado" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem key={uuid()} value={(0).toString()}>Todos</SelectItem>
+                      <SelectItem key={uuid()} value={(SELECT_DEFAULT_VALUE)}>Todos</SelectItem>
                       {
-                        Object.entries(STATES).filter(([key, _value]) => isNaN(Number(key))).map(([key, value]) => (
-                          <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
-                        ))
+                        Object
+                          .entries(STATE)
+                          .filter(([key, _value]) => isNaN(Number(key)))
+                          .map(([key, value]) => (
+                            <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                          )
+                        )
                       }
                     </SelectContent>
                   </Select>
@@ -489,10 +510,10 @@ export default function CitiesPage() {
         </form>
       </Form>
 
-      {/* table */}
+      {/* Table */}
       <DataTable columns={columns} data={cities} />
 
-      {/* pagination */}
+      {/* Pagination */}
       <Pagination>
         <PaginationContent>
           <PaginationItem>

@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
-import { applyCepMask, applyCnpjMask, applyCpfMask, captalize, formatCurrency, formatBirthdate, formatDateTime, formatPhoneNumber } from '@/lib/utils'
+import { applyCepMask, applyCnpjMask, applyCpfMask, captalize, formatCurrency, formatBirthdate, formatDateTime, applyPhoneNumberMask } from '@/lib/utils'
 import { DetailsField } from '@/components/DetailsField'
 import { DetailsRow } from '@/components/DetailsRow'
 import { Form } from '@/components/ui/form'
@@ -154,7 +154,7 @@ export default function MemberDetailsPage() {
     },
     cpf: applyCpfMask(member.cpf),
     name: captalize(member.name),
-    phoneNumber: formatPhoneNumber(member.phoneNumber),
+    phoneNumber: applyPhoneNumberMask(member.phoneNumber),
     birthDate: formatBirthdate(member.birthDate),
     cep: applyCepMask(member.cep),
     totalSavings: formatCurrency(member.totalSavings),
@@ -182,7 +182,7 @@ export default function MemberDetailsPage() {
   const fillUpdateForm = (member: MemberDetailedFromAPI) => {
     form.setValue('name', member.name)
     form.setValue('email', member.email)
-    form.setValue('phoneNumber', formatPhoneNumber(member.phoneNumber))
+    form.setValue('phoneNumber', applyPhoneNumberMask(member.phoneNumber))
     form.setValue('birthDate', formatBirthdate(member.birthDate))
     form.setValue('cep', applyCepMask(member.cep))
   }

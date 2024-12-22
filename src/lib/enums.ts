@@ -9,7 +9,7 @@ export enum CATEGORY {
   Calçados = 2
 }
 
-export enum STATES {
+export enum STATE {
   AC = 1,
   AL = 2,
   AP = 3,
