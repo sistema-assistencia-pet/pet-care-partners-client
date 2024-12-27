@@ -468,24 +468,12 @@ export default function MemberDetailsPage() {
                       onSubmit={updateMemberForm.handleSubmit((data) => updateMember(data))}
                     >
                       <DetailsRow>
-                        <InputContainer size="w-2/3">
+                        <InputContainer size="w-full">
                           <Label htmlFor="name">Nome</Label>
                           <Input className="bg-white" { ...updateMemberForm.register("name") } />
                           {
                             updateMemberForm.formState.errors.name
                               && <span className="text-red-500 text-xs">{updateMemberForm.formState.errors.name.message}</span>
-                          }
-                        </InputContainer>
-                        <InputContainer size="w-1/3">
-                          <Label htmlFor="birthDate">Data de Nascimento</Label>
-                          <InputMask
-                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            mask="99/99/9999"
-                            { ...updateMemberForm.register("birthDate",) }
-                          />
-                          {
-                            updateMemberForm.formState.errors.birthDate
-                              && <span className="text-red-500 text-xs">{updateMemberForm.formState.errors.birthDate.message}</span>
                           }
                         </InputContainer>
                       </DetailsRow>
@@ -509,6 +497,18 @@ export default function MemberDetailsPage() {
                           {
                             updateMemberForm.formState.errors.phoneNumber
                               && <span className="text-red-500 text-xs">{updateMemberForm.formState.errors.phoneNumber.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/3">
+                          <Label htmlFor="birthDate">Data de Nascimento</Label>
+                          <InputMask
+                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            mask="99/99/9999"
+                            { ...updateMemberForm.register("birthDate",) }
+                          />
+                          {
+                            updateMemberForm.formState.errors.birthDate
+                              && <span className="text-red-500 text-xs">{updateMemberForm.formState.errors.birthDate.message}</span>
                           }
                         </InputContainer>
                         
