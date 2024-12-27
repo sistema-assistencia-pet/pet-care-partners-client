@@ -71,17 +71,17 @@ export default function PartnerDetailsPage() {
     city: ICity;
     state: IState;
   }
-  
+
   interface IStatus {
     id: number;
     translation: string;
   }
-  
+
   interface ICategory {
     id: number;
     name: string;
   }
-  
+
   interface IPartnerFromAPI {
     id: string;
     cnpj: string;
@@ -245,10 +245,10 @@ export default function PartnerDetailsPage() {
   })
 
   const fillUpdateForm = (partner: IPartnerFromAPI) => {
-    updatePartnerForm.setValue('cnpj', partner.cnpj)
-    updatePartnerForm.setValue('password', partner.password)
-    updatePartnerForm.setValue('corporateName', partner.corporateName)
-    updatePartnerForm.setValue('fantasyName', partner.fantasyName)
+    updatePartnerForm.setValue('cnpj', partner.cnpj ?? '')
+    updatePartnerForm.setValue('password', partner.password ?? '')
+    updatePartnerForm.setValue('corporateName', partner.corporateName ?? '')
+    updatePartnerForm.setValue('fantasyName', partner.fantasyName ?? '')
     if (partner.address === null) {
       updatePartnerForm.setValue('address', null)
     } else {
@@ -257,18 +257,18 @@ export default function PartnerDetailsPage() {
       updatePartnerForm.setValue('address.number', partner?.address?.number ?? '')
       updatePartnerForm.setValue('address.complement', partner?.address?.complement ?? '')
       updatePartnerForm.setValue('address.neighborhood', partner?.address?.neighborhood ?? '')
-      updatePartnerForm.setValue('address.cityId', partner?.address?.city?.id ? partner.address.city.id.toString() : '')
-      updatePartnerForm.setValue('address.stateId', partner?.address?.state?.id ? partner.address.state.id.toString() : '')
+      updatePartnerForm.setValue('address.cityId', partner?.address?.city?.id ? partner.address.city.id.toString() : SELECT_DEFAULT_VALUE)
+      updatePartnerForm.setValue('address.stateId', partner?.address?.state?.id ? partner.address.state.id.toString() : SELECT_DEFAULT_VALUE)
     }
-    updatePartnerForm.setValue('categoryId', partner.category.id.toString())
-    updatePartnerForm.setValue('tags', partner.tags)
-    updatePartnerForm.setValue('isOnline', partner.isOnline.toString())
-    updatePartnerForm.setValue('managerName', partner.managerName)
-    updatePartnerForm.setValue('managerPhoneNumber', partner.managerPhoneNumber)
-    updatePartnerForm.setValue('managerEmail', partner.managerEmail)
-    updatePartnerForm.setValue('businessPhoneNumber', partner.businessPhoneNumber)
-    updatePartnerForm.setValue('about', partner.about)
-    updatePartnerForm.setValue('openingHours', partner.openingHours)
+    updatePartnerForm.setValue('categoryId', partner.category.id.toString() ?? SELECT_DEFAULT_VALUE)
+    updatePartnerForm.setValue('tags', partner.tags ?? '')
+    updatePartnerForm.setValue('isOnline', partner.isOnline.toString() ?? '')
+    updatePartnerForm.setValue('managerName', partner.managerName ?? '')
+    updatePartnerForm.setValue('managerPhoneNumber', partner.managerPhoneNumber ?? '')
+    updatePartnerForm.setValue('managerEmail', partner.managerEmail ?? '')
+    updatePartnerForm.setValue('businessPhoneNumber', partner.businessPhoneNumber ?? '')
+    updatePartnerForm.setValue('about', partner.about ?? '')
+    updatePartnerForm.setValue('openingHours', partner.openingHours ?? '')
   }
 
   const formatUpdatePartnerData = (partnerData: UpdatePartnerFormSchema): IPartnerToBeUpdated => {
@@ -294,12 +294,13 @@ export default function PartnerDetailsPage() {
 
     return {
       ...partnerData,
+      cnpj: leaveOnlyDigits(partnerData.cnpj ?? ''),
       managerPhoneNumber: leaveOnlyDigits(partnerData.managerPhoneNumber ?? ''),
       businessPhoneNumber: leaveOnlyDigits(partnerData.businessPhoneNumber ?? ''),
       isOnline: partnerData.isOnline === 'true',
       categoryId: categoryId !== undefined ? parseInt(categoryId): categoryId,
       address: doesPartnerHaveAddress ? {
-        cep: partnerData.address?.cep ?? '',
+        cep: leaveOnlyDigits(partnerData.address?.cep ?? ''),
         street: partnerData.address?.street ?? '',
         number: partnerData.address?.number ?? '',
         complement: partnerData.address?.complement ?? '',
@@ -625,329 +626,329 @@ export default function PartnerDetailsPage() {
       <div className="flex justify-between w-full">
         <div className="flex gap-4 justify-end w-full">
 
-        {/* Image Input */}
-        <InputContainer>
-          <Label
-            htmlFor="image-file-input"
-            className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
-          >
-            Inserir imagem
-          </Label>
-          <Input
-            accept="image/png, image/jpeg"
-            className="hidden"
-            id="image-file-input"
-            onChange={handleImageFileChange}
-            type="file"
-            multiple={false}
-          />
-        </InputContainer>
+          {/* Image Input */}
+          <InputContainer>
+            <Label
+              htmlFor="image-file-input"
+              className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+            >
+              Inserir imagem
+            </Label>
+            <Input
+              accept="image/png, image/jpeg"
+              className="hidden"
+              id="image-file-input"
+              onChange={handleImageFileChange}
+              type="file"
+              multiple={false}
+            />
+          </InputContainer>
 
-        {/* Logo Input */}
-        <InputContainer>
-          <Label
-            htmlFor="logo-file-input"
-            className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
-          >
-            Inserir logo
-          </Label>
-          <Input
-            accept="image/png, image/jpeg"
-            className="hidden"
-            id="logo-file-input"
-            onChange={handleLogoFileChange}
-            type="file"
-            multiple={false}
-          />
-        </InputContainer>
+          {/* Logo Input */}
+          <InputContainer>
+            <Label
+              htmlFor="logo-file-input"
+              className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+            >
+              Inserir logo
+            </Label>
+            <Input
+              accept="image/png, image/jpeg"
+              className="hidden"
+              id="logo-file-input"
+              onChange={handleLogoFileChange}
+              type="file"
+              multiple={false}
+            />
+          </InputContainer>
 
-        {/* Inactivate Partner */}
-        {
-          partner?.status?.id === STATUS.Ativo && (
-            <AlertDialog>
-              <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Todos os benefícios do estabelecimento também serão inativados!
-                  </AlertDialogDescription>
-                  <AlertDialogDescription>
-                    Essa ação poderá ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <Button onClick={() => inactivatePartner(partner.id)}>
-                    Inativar
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )
-        }
+          {/* Inactivate Partner */}
+          {
+            partner?.status?.id === STATUS.Ativo && (
+              <AlertDialog>
+                <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Todos os benefícios do estabelecimento também serão inativados!
+                    </AlertDialogDescription>
+                    <AlertDialogDescription>
+                      Essa ação poderá ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <Button onClick={() => inactivatePartner(partner.id)}>
+                      Inativar
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          }
 
-        {/* Activate Partner */}
-        {
-          partner?.status?.id === STATUS.Inativo && (
-            <AlertDialog>
-              <AlertDialogTrigger className='uppercase px-8 h-9 rounded-md text-sm font-medium border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Todos os benefícios do estabelecimento também serão ativados!
-                  </AlertDialogDescription>
-                  <AlertDialogDescription>
-                    Essa ação poderá ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <Button onClick={() => activatePartner(partner.id)}>
-                    Ativar
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )
-        }
+          {/* Activate Partner */}
+          {
+            partner?.status?.id === STATUS.Inativo && (
+              <AlertDialog>
+                <AlertDialogTrigger className='uppercase px-8 h-9 rounded-md text-sm font-medium border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar ativação?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Todos os benefícios do estabelecimento também serão ativados!
+                    </AlertDialogDescription>
+                    <AlertDialogDescription>
+                      Essa ação poderá ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <Button onClick={() => activatePartner(partner.id)}>
+                      Ativar
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          }
 
-        {/* Update Partner */}
-        {
-          partner
-          && (
-            <AlertDialog>
-              <AlertDialogTrigger title='Editar' className='rounded-md w-9 h-9 bg-primary text-white flex flex-col justify-center'>
-                <Pencil  className='mx-auto'/>
-              </AlertDialogTrigger>
-              <AlertDialogContent className='max-h-screen overflow-y-auto max-w-[80%]'>
-                <AlertDialogTitle>Editar estabelecimento</AlertDialogTitle>
-                <Form { ...updatePartnerForm }>
-                  <form
-                    className='flex flex-col gap-4'
-                    onSubmit={updatePartnerForm.handleSubmit((data) => updatePartner(data))}
-                  >
+          {/* Update Partner */}
+          {
+            partner
+            && (
+              <AlertDialog>
+                <AlertDialogTrigger title='Editar' className='rounded-md w-9 h-9 bg-primary text-white flex flex-col justify-center'>
+                  <Pencil  className='mx-auto'/>
+                </AlertDialogTrigger>
+                <AlertDialogContent className='max-h-screen overflow-y-auto max-w-[80%]'>
+                  <AlertDialogTitle>Editar estabelecimento</AlertDialogTitle>
+                  <Form { ...updatePartnerForm }>
+                    <form
+                      className='flex flex-col gap-4'
+                      onSubmit={updatePartnerForm.handleSubmit((data) => updatePartner(data))}
+                    >
 
-                    <DetailsRow>
-                      <InputContainer size="w-1/6">
-                        <Label htmlFor="cnpj">CNPJ</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("cnpj") } />
-                        {
-                          updatePartnerForm.formState.errors.cnpj
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.cnpj.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-1/6">
-                        <Label htmlFor="password">Senha</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("password") } />
-                        {
-                          updatePartnerForm.formState.errors.password
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.password.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-2/6">
-                        <Label htmlFor="fantasyName">Nome Fantasia</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("fantasyName") } />
-                        {
-                          updatePartnerForm.formState.errors.fantasyName
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.fantasyName.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-2/6">
-                        <Label htmlFor="corporateName">Razão Social</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("corporateName") } />
-                        {
-                          updatePartnerForm.formState.errors.corporateName
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.corporateName.message}</span>
-                        }
-                      </InputContainer>
-                    </DetailsRow>
+                      <DetailsRow>
+                        <InputContainer size="w-1/6">
+                          <Label htmlFor="cnpj">CNPJ</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("cnpj") } />
+                          {
+                            updatePartnerForm.formState.errors.cnpj
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.cnpj.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/6">
+                          <Label htmlFor="password">Senha</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("password") } />
+                          {
+                            updatePartnerForm.formState.errors.password
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.password.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-2/6">
+                          <Label htmlFor="fantasyName">Nome Fantasia</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("fantasyName") } />
+                          {
+                            updatePartnerForm.formState.errors.fantasyName
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.fantasyName.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-2/6">
+                          <Label htmlFor="corporateName">Razão Social</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("corporateName") } />
+                          {
+                            updatePartnerForm.formState.errors.corporateName
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.corporateName.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
 
-                    <DetailsRow>
-                      <InputContainer size="w-1/6">
-                        <Label htmlFor="openingHours">Horário de Funcionamento</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("openingHours") } />
-                        {
-                          updatePartnerForm.formState.errors.openingHours
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.openingHours.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-1/6">
-                        <Label htmlFor="isOnline">Online</Label>
-                        <FormField
-                          control={updatePartnerForm.control}
-                          name="isOnline"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="bg-white">
-                                    <SelectValue placeholder="" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="true">Sim</SelectItem>
-                                  <SelectItem value="false">Não</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                        {
-                          updatePartnerForm.formState.errors.isOnline
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.isOnline.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-1/6">
-                        <Label htmlFor="categoryId">Categoria</Label>
-                        <FormField
-                          control={updatePartnerForm.control}
-                          name="categoryId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="bg-white">
-                                    <SelectValue placeholder="" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {
-                                    categories.map((category) => (
-                                      <SelectItem key={uuid()} value={category.id.toString()}>{category.name}</SelectItem>
-                                    ))
-                                  }
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                        {
-                          updatePartnerForm.formState.errors.categoryId
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.categoryId.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-3/6">
-                        <Label htmlFor="tags">Tags</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("tags") } placeholder="Tags sepadas por vírgula" />
-                        {
-                          updatePartnerForm.formState.errors.tags
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.tags.message}</span>
-                        }
-                      </InputContainer>
-                    </DetailsRow>
+                      <DetailsRow>
+                        <InputContainer size="w-1/6">
+                          <Label htmlFor="openingHours">Horário de Funcionamento</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("openingHours") } />
+                          {
+                            updatePartnerForm.formState.errors.openingHours
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.openingHours.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/6">
+                          <Label htmlFor="isOnline">Online</Label>
+                          <FormField
+                            control={updatePartnerForm.control}
+                            name="isOnline"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="true">Sim</SelectItem>
+                                    <SelectItem value="false">Não</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                          {
+                            updatePartnerForm.formState.errors.isOnline
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.isOnline.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/6">
+                          <Label htmlFor="categoryId">Categoria</Label>
+                          <FormField
+                            control={updatePartnerForm.control}
+                            name="categoryId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {
+                                      categories.map((category) => (
+                                        <SelectItem key={uuid()} value={category.id.toString()}>{category.name}</SelectItem>
+                                      ))
+                                    }
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                          {
+                            updatePartnerForm.formState.errors.categoryId
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.categoryId.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-3/6">
+                          <Label htmlFor="tags">Tags</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("tags") } placeholder="Tags sepadas por vírgula" />
+                          {
+                            updatePartnerForm.formState.errors.tags
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.tags.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
 
-                    <DetailsRow>
-                      <InputContainer>
-                        <Label htmlFor="about">Sobre</Label>
-                        <Input className="bg-white text-wrap" { ...updatePartnerForm.register("about") } />
-                        {
-                          updatePartnerForm.formState.errors.about
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.about.message}</span>
-                        }
-                      </InputContainer>
-                    </DetailsRow>
+                      <DetailsRow>
+                        <InputContainer>
+                          <Label htmlFor="about">Sobre</Label>
+                          <Input className="bg-white text-wrap" { ...updatePartnerForm.register("about") } />
+                          {
+                            updatePartnerForm.formState.errors.about
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.about.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
 
-                    <Separator />
+                      <Separator />
 
-                    <DetailsRow>
-                      <InputContainer size="w-2/6">
-                        <Label htmlFor="managerName">Nome do Responsável</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("managerName") } />
-                        {
-                          updatePartnerForm.formState.errors.managerName
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.managerName.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-2/6">
-                        <Label htmlFor="managerEmail">E-mail do Responsável</Label>
-                        <Input className="bg-white" { ...updatePartnerForm.register("managerEmail") } />
-                        {
-                          updatePartnerForm.formState.errors.managerEmail
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.managerEmail.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-1/6">
-                        <Label htmlFor="managerPhoneNumber">Telefone do Responsável</Label>
-                        <InputMask
-                          className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                          mask="(99) 999999999"
-                          { ...updatePartnerForm.register("managerPhoneNumber",) }
-                        />
-                        {
-                          updatePartnerForm.formState.errors.managerPhoneNumber
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.managerPhoneNumber.message}</span>
-                        }
-                      </InputContainer>
-                      <InputContainer size="w-1/6">
-                        <Label htmlFor="businessPhoneNumber">Telefone Comercial</Label>
-                        <InputMask
-                          className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                          mask="(99) 999999999"
-                          { ...updatePartnerForm.register("businessPhoneNumber") }
-                        />
-                        {
-                          updatePartnerForm.formState.errors.businessPhoneNumber
-                            && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.businessPhoneNumber.message}</span>
-                        }
-                      </InputContainer>
-                    </DetailsRow>
+                      <DetailsRow>
+                        <InputContainer size="w-2/6">
+                          <Label htmlFor="managerName">Nome do Responsável</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("managerName") } />
+                          {
+                            updatePartnerForm.formState.errors.managerName
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.managerName.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-2/6">
+                          <Label htmlFor="managerEmail">E-mail do Responsável</Label>
+                          <Input className="bg-white" { ...updatePartnerForm.register("managerEmail") } />
+                          {
+                            updatePartnerForm.formState.errors.managerEmail
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.managerEmail.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/6">
+                          <Label htmlFor="managerPhoneNumber">Telefone do Responsável</Label>
+                          <InputMask
+                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            mask="(99) 999999999"
+                            { ...updatePartnerForm.register("managerPhoneNumber",) }
+                          />
+                          {
+                            updatePartnerForm.formState.errors.managerPhoneNumber
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.managerPhoneNumber.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/6">
+                          <Label htmlFor="businessPhoneNumber">Telefone Comercial</Label>
+                          <InputMask
+                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            mask="(99) 999999999"
+                            { ...updatePartnerForm.register("businessPhoneNumber") }
+                          />
+                          {
+                            updatePartnerForm.formState.errors.businessPhoneNumber
+                              && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.businessPhoneNumber.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
 
-                    <Separator />
+                      <Separator />
 
-                    <DetailsRow>
-                      <InputContainer size="w-1/5">
-                        <Label htmlFor="address">Endereço cadastrado</Label>
-                        <FormField
-                          name="address"
-                          render={() => (
-                            <FormItem>
-                              <Select
-                                onValueChange={(value) => setDoesPartnerHaveAddress(value === 'true')}
-                                defaultValue={doesPartnerHaveAddress.toString()}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="bg-white">
-                                    <SelectValue placeholder="" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="true">Sim</SelectItem>
-                                  <SelectItem value="false">Não</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                      </InputContainer>
+                      <DetailsRow>
+                        <InputContainer size="w-1/5">
+                          <Label htmlFor="address">Endereço cadastrado</Label>
+                          <FormField
+                            name="address"
+                            render={() => (
+                              <FormItem>
+                                <Select
+                                  onValueChange={(value) => setDoesPartnerHaveAddress(value === 'true')}
+                                  defaultValue={doesPartnerHaveAddress.toString()}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="true">Sim</SelectItem>
+                                    <SelectItem value="false">Não</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                        </InputContainer>
+                        {
+                          doesPartnerHaveAddress && (
+                            <InputContainer size="w-1/5">
+                              <Label htmlFor="address.cep">CEP</Label>
+                              <Input className="bg-white" { ...updatePartnerForm.register("address.cep") } />
+                              {
+                                updatePartnerForm.formState.errors.address?.cep
+                                  && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.address.cep.message}</span>
+                              }
+                            </InputContainer>
+                          )
+                        }
+                        {
+                          doesPartnerHaveAddress && (
+                            <InputContainer size="w-3/5">
+                              <Label htmlFor="address.street">Rua</Label>
+                              <Input className="bg-white" { ...updatePartnerForm.register("address.street") } />
+                              {
+                                updatePartnerForm.formState.errors.address?.street
+                                  && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.address.street.message}</span>
+                              }
+                            </InputContainer>
+                          )
+                        }
+                      </DetailsRow>
+
                       {
-                        doesPartnerHaveAddress && (
-                          <InputContainer size="w-1/5">
-                            <Label htmlFor="address.cep">CEP</Label>
-                            <Input className="bg-white" { ...updatePartnerForm.register("address.cep") } />
-                            {
-                              updatePartnerForm.formState.errors.address?.cep
-                                && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.address.cep.message}</span>
-                            }
-                          </InputContainer>
-                        )
-                      }
-                      {
-                        doesPartnerHaveAddress && (
-                          <InputContainer size="w-3/5">
-                            <Label htmlFor="address.street">Rua</Label>
-                            <Input className="bg-white" { ...updatePartnerForm.register("address.street") } />
-                            {
-                              updatePartnerForm.formState.errors.address?.street
-                                && <span className="text-red-500 text-xs">{updatePartnerForm.formState.errors.address.street.message}</span>
-                            }
-                          </InputContainer>
-                        )
-                      }
-                    </DetailsRow>
-
-                    {
                         doesPartnerHaveAddress && (
                           <DetailsRow>
                             <InputContainer size="w-1/5">
@@ -1040,51 +1041,52 @@ export default function PartnerDetailsPage() {
                         )
                       }
 
-                    <AlertDialogFooter>
-                      <AlertDialogCancel type="button">Fechar</AlertDialogCancel>
-                      <AlertDialogCancel type="button" onClick={() => fillUpdateForm(partner)}>
-                        Cancelar
-                      </AlertDialogCancel>
-                      <AlertDialogAction type="submit" disabled={!updatePartnerForm.formState.isValid}>
-                        Confirmar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </form>
-                </Form>
-              </AlertDialogContent>
-            </AlertDialog>
-          )
-        }
+                      <AlertDialogFooter>
+                        <AlertDialogCancel type="button">Fechar</AlertDialogCancel>
+                        <AlertDialogCancel type="button" onClick={() => fillUpdateForm(partner)}>
+                          Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction type="submit" disabled={!updatePartnerForm.formState.isValid}>
+                          Confirmar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </form>
+                  </Form>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          }
 
-        {/* Delete Partner */}
-        {
-          partner
-          && [STATUS.Ativo, STATUS.Inativo].includes(partner.status.id)
-          && (
-            <AlertDialog>
-              <AlertDialogTrigger title='Excluir' className='rounded-md w-9 h-9 bg-destructive text-white flex flex-col justify-center'>
-                <Trash2  className='mx-auto'/>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Todos os benefícios do estabelecimento também serão excluídos!
-                  </AlertDialogDescription>
-                  <AlertDialogDescription>
-                    A operação <strong className='text-black'>não</strong> poderá ser desfeita!
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <Button variant="destructive" onClick={() => deletePartner(partner.id)}>
-                    Excluir
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )
-        }
+          {/* Delete Partner */}
+          {
+            partner
+            && [STATUS.Ativo, STATUS.Inativo].includes(partner.status.id)
+            && (
+              <AlertDialog>
+                <AlertDialogTrigger title='Excluir' className='rounded-md w-9 h-9 bg-destructive text-white flex flex-col justify-center'>
+                  <Trash2  className='mx-auto'/>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Todos os benefícios do estabelecimento também serão excluídos!
+                    </AlertDialogDescription>
+                    <AlertDialogDescription>
+                      A operação <strong className='text-black'>não</strong> poderá ser desfeita!
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <Button variant="destructive" onClick={() => deletePartner(partner.id)}>
+                      Excluir
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )
+          }
+
         </div>
       </div>
 
@@ -1117,7 +1119,7 @@ export default function PartnerDetailsPage() {
               referrerPolicy="no-referrer"
               target="_blank"
             >
-              {partner?.image}
+              {partner?.image ?? ''}
             </Link>
           </DetailsField>
           <DetailsField label="Logo">
@@ -1128,7 +1130,7 @@ export default function PartnerDetailsPage() {
               referrerPolicy="no-referrer"
               target="_blank"
             >
-              {partner?.logo}
+              {partner?.logo ?? ''}
             </Link>
           </DetailsField>
           <DetailsField label="Horário de Funcionamento" value={partner?.openingHours ?? ''} />

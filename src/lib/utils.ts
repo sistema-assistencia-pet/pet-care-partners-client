@@ -25,8 +25,9 @@ export const captalize = (word: string): string => word.toLowerCase().split(` `)
 
 export const formatDateTime = (date: string): string => new Date(date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 
-// export const formatBirthdate = (date: string): string => date.split('-').reverse().join('/')
-export const formatBirthdate = (date: string): string => date
+export const convertISODateToPTBR = (date: string): string => date.split('-').reverse().join('/')
+
+export const convertPTBRDateToISO = (date: string): string => date.split('/').reverse().join('-')
 
 export const formatCurrency = (value: number): string => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 

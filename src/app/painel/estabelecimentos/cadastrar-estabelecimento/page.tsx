@@ -394,9 +394,7 @@ export default function RegisterPartner() {
   })
 
   const fetchCities = async (stateId: string) => {
-    const response = await sendRequest<
-      { cities: ICity[] }
-    >({
+    const response = await sendRequest<{ cities: ICity[] }>({
       endpoint: `/city/?state-id=${stateId}`,
       method: 'GET',
     })

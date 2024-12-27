@@ -15,13 +15,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { applyCnpjMask, applyCpfMask, captalize, formatDateTime, removeCnpjMask } from '@/lib/utils'
+import {
+  applyCnpjMask,
+  applyCpfMask,
+  captalize,
+  formatDateTime,
+  removeSpecialCharacters
+} from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
 import { Eye, FilterX } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Pagination,
   PaginationContent,
@@ -40,58 +47,10 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { Label } from '@/components/ui/label'
-
-interface IClient {
-  id: string
-  cnpj: string
-  fantasyName: string
-  segment: string
-  status: string
-  createdAt: string
-}
-
-interface IMember {
-  id: string
-  client: {
-    cnpj: string
-    fantasyName: string
-  }
-  cpf: string
-  name: string
-  status: string
-  createdAt: string
-}
-
-interface IFormValues {
-  cpf: string
-  name: string
-  clientCnpj: string
-  statusId: string
-}
-
-const PAGINATION_LIMIT = 10
-const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
-  cpf: '',
-  name: '',
-  clientCnpj: '',
-  statusId: '1'
-}
+import { PAGINATION_LIMIT } from '@/lib/constants'
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<IMember[]>([])
-  const [membersCount, setMembersCount] = useState<number>(0)
-  const [clients, setClients] = useState<IClient[]>([])
-  const [clientIdSelected, setClientIdSelected] = useState<string>('')
-  const [skip, setSkip] = useState<number>(0)
-  const [page, setPage] = useState<number>(1)
-  const [query, setQuery] = useState<URLSearchParams | null>(null)
-  const [fileSelected, setFileSelected] = useState<File | null>(null)
-
-  const form = useForm<IFormValues>({
-    mode: 'onSubmit',
-    defaultValues: FORM_FILTER_DEFAULT_VALUES
-  })
+  // --------------------------- PAGE SETUP ---------------------------
   const { push } = useRouter()
   const { toast } = useToast()
 
@@ -114,7 +73,7 @@ export default function MembersPage() {
     },
     {
       header: `Status`,
-      accessorKey: `status`
+      accessorKey: `status.translation`
     },
     {
       header: `Criado em`,
@@ -137,30 +96,31 @@ export default function MembersPage() {
     }
   ]
 
-  const handleNextPagination = () => {
-    setSkip((prev) => prev + PAGINATION_LIMIT)
-    setPage((prev) => prev + 1)
+  // --------------------------- FILTER ---------------------------
+  interface IFilterFormValues {
+    searchInput: string
+    statusId: string
   }
 
-  const handlePreviousPagination = () => {
-    setSkip((prev) => prev - PAGINATION_LIMIT)
-    setPage((prev) => prev - 1)
+  const FILTER_FORM_DEFAULT_VALUES: IFilterFormValues = {
+    searchInput: '',
+    statusId: '1'
   }
 
-  const handleResetPagination = () => {
-    setSkip(0)
-    setPage(1)
-  }
+  const [query, setQuery] = useState<URLSearchParams | null>(null)
 
-  const submitFilter = async (data: FieldValues) => {
-    const { cpf, name, clientCnpj, statusId } = data
+  const filterForm = useForm<IFilterFormValues>({
+    mode: 'onSubmit',
+    defaultValues: FILTER_FORM_DEFAULT_VALUES
+  })
+
+  const submitFilter = async (data: IFilterFormValues) => {
+    const { searchInput, statusId } = data
     const query = new URLSearchParams()
 
-    const clientCnpjWithoutMask = removeCnpjMask(clientCnpj)
+    const searchInputWithoutMask = removeSpecialCharacters(searchInput)
 
-    if (cpf) query.append('cpf', cpf)
-    if (name) query.append('name', name)
-    if (clientCnpj) query.append('client-cnpj', clientCnpjWithoutMask)
+    if (searchInput) query.append('search-input', searchInputWithoutMask)
     if (statusId) query.append('status-id', statusId)
 
     setQuery(query)
@@ -168,7 +128,7 @@ export default function MembersPage() {
   }
 
   const resetFilter = () => {
-    form.reset(FORM_FILTER_DEFAULT_VALUES)
+    filterForm.reset(FILTER_FORM_DEFAULT_VALUES)
 
     setSkip(0)
     setPage(1)
@@ -176,20 +136,44 @@ export default function MembersPage() {
     fetchMembers()
   }
 
-  const formatMember = (member: { statusId: number } & Omit<IMember, 'status'>) => ({
+  // --------------------------- FETCH MEMBERS ---------------------------
+  interface IMember {
+    id: string
+    cpf: string
+    name: string
+    client: {
+      id: string
+      cnpj: string
+      fantasyName: string
+    }
+    status: {
+      id: number
+      translation: string
+    }
+    createdAt: string
+  }
+
+  const [members, setMembers] = useState<IMember[]>([])
+  const [membersCount, setMembersCount] = useState<number>(0)
+
+  const formatMember = (member: IMember): IMember => ({
     ...member,
     cpf: applyCpfMask(member.cpf),
+    name: captalize(member.name),
     client: {
+      id: member.client.id,
       cnpj: applyCnpjMask(member.client.cnpj),
       fantasyName: captalize(member.client.fantasyName)
     },
-    name: captalize(member.name),
-    createdAt: formatDateTime(member.createdAt),
-    status: STATUS[member.statusId]
+    status: {
+      id: member.status.id,
+      translation: captalize(member.status.translation)
+    },
+    createdAt: formatDateTime(member.createdAt)
   })
 
   const fetchMembers = async (query?: URLSearchParams) => {
-    const response = await sendRequest<{ members: Array<{ statusId: number } & Omit<IMember, 'status'>> }>({
+    const response = await sendRequest<{ members: IMember[] }>({
       endpoint: `/member?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
       method: 'GET',
     })
@@ -212,19 +196,44 @@ export default function MembersPage() {
     setMembersCount(parseInt(response.headers[`x-total-count`]))
   }
 
-  const formatClient = (client: { statusId: number } & Omit<IClient, 'status'>) => ({
+  // --------------------------- FETCH CLIENTS ---------------------------
+  interface IClient {
+    id: string
+    cnpj: string
+    fantasyName: string
+    segment: string
+    availableBalanceInCents: number
+    createdAt: string
+    city: {
+      id: number
+      name: string
+    } | null
+    state: {
+      id: number
+      name: string
+    } | null
+  }
+
+  const [clients, setClients] = useState<IClient[]>([])
+
+  const formatClient = (client: IClient): IClient => ({
     ...client,
     cnpj: applyCnpjMask(client.cnpj),
     fantasyName: captalize(client.fantasyName),
     segment: captalize(client.segment),
     createdAt: formatDateTime(client.createdAt),
-    status: STATUS[client.statusId],
+    city: client.city ? {
+      id: client.city.id,
+      name: captalize(client.city.name)
+    } : null,
+    state: client.state ? {
+      id: client.state.id,
+      name: captalize(client.state.name)
+    } : null
   })
 
   const fetchClients = async () => {
-    const response = await sendRequest<
-      { clients: Array<Omit<IClient, 'status'> & { statusId: number }>, systemTotalSavings: number }
-    >({
+    const response = await sendRequest<{ clients: IClient[] }>({
       endpoint: '/client',
       method: 'GET',
     })
@@ -236,15 +245,18 @@ export default function MembersPage() {
       })
 
       setClients([])
-      // setSystemTotalSavings(formatCurrency(0))
 
       return
     }
 
     const formattedClients = response.data.clients.map((client) => formatClient(client))
 
-    setClients(formattedClients)    // setSystemTotalSavings(formatCurrency(response.data.systemTotalSavings))
+    setClients(formattedClients)
   }
+
+  // --------------------------- CREATE MANY MEMBERS ---------------------------
+  const [clientIdSelected, setClientIdSelected] = useState<string>('')
+  const [fileSelected, setFileSelected] = useState<File | null>(null)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -269,7 +281,7 @@ export default function MembersPage() {
     formData.append("file", file)
 
     const response = await sendRequest({
-      endpoint: `/member/${clientIdSelected}/create-members-in-bulk`,
+      endpoint: `/member/${clientIdSelected}/create-in-bulk`,
       method: 'POST',
       data: formData,
     })
@@ -289,21 +301,46 @@ export default function MembersPage() {
     })
   }
 
+  // --------------------------- PAGINATION ---------------------------
+  const [skip, setSkip] = useState<number>(0)
+  const [page, setPage] = useState<number>(1)
+
+  const handleNextPagination = () => {
+    setSkip((prev) => prev + PAGINATION_LIMIT)
+    setPage((prev) => prev + 1)
+  }
+
+  const handlePreviousPagination = () => {
+    setSkip((prev) => prev - PAGINATION_LIMIT)
+    setPage((prev) => prev - 1)
+  }
+
+  const handleResetPagination = () => {
+    setSkip(0)
+    setPage(1)
+  }
+
+  // --------------------------- USE EFFECT ---------------------------
+  // Dispara a criação de associados em lote quando um arquivo é selecionado
   useEffect(() => {
     if (fileSelected) {
       sendCSVToCreateMembers(fileSelected)
     }
   }, [fileSelected])
 
-  // Carrega lista de associados
+  // Carrega lista de associados quando a página carrega ou a paginação muda
   useEffect(() => {
     if (query) {
       fetchMembers(query)
     } else fetchMembers()
-
-    fetchClients()
   }, [skip])
 
+  // Carrega lista de clientes quando a página carrega
+  useEffect(() => {
+    fetchClients()
+  }, [])
+
+  // --------------------------- RETURN ---------------------------
   return (
     <DashboardLayout title="Associados" secondaryText={`Total: ${membersCount} associados`}>
       <div className="flex justify-between w-full">
@@ -371,23 +408,28 @@ export default function MembersPage() {
           </AlertDialog>
         </div>
       </div>
-      <Form { ...form }>
+
+      {/* Filter */}
+      <Form { ...filterForm }>
         <form
-          className='flex flex-row gap-4'
-          onSubmit={form.handleSubmit((data) => submitFilter(data))}
+          className='flex flex-row gap-4 items-end'
+          onSubmit={filterForm.handleSubmit((data) => submitFilter(data))}
         >
-          <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...form.register("cpf") } placeholder="CPF" type="text" />
+
+          {/* Search Input */}
+          <div className="flex flex-col grow space-y-1.5">
+            <Label className='bg-transparent text-sm' htmlFor="searchInput">Pesquisar</Label>
+            <Input
+              { ...filterForm.register("searchInput") }
+              className='bg-white'
+              placeholder="CPF / Nome / CNPJ do Cliente / Nome do Cliente" type="text"
+            />
           </div>
-          <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...form.register("clientCnpj") } placeholder="CNPJ do cliente" type="text" />
-          </div>
-          <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...form.register("name") } placeholder="Nome" type="text" />
-          </div>
+
+          {/* Status */}
           <div className="flex flex-col space-y-1.5 bg-white">
             <FormField
-              control={form.control}
+              control={filterForm.control}
               name="statusId"
               render={({ field }) => (
                 <FormItem>
@@ -407,6 +449,8 @@ export default function MembersPage() {
               )}
             />
           </div>
+
+          {/* Buttons */}
           <Button className="w-28" type='submit'>
             Filtrar
           </Button>
@@ -422,8 +466,10 @@ export default function MembersPage() {
         </form>
       </Form>
 
+      {/* Table */}
       <DataTable columns={columns} data={members} />
 
+      {/* Pagination */}
       <Pagination>
         <PaginationContent>
           <PaginationItem>

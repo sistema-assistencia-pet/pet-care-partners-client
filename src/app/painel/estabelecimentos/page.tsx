@@ -10,8 +10,7 @@ import {
   applyCnpjMask,
   captalize,
   formatDateTime,
-  leaveOnlyDigits,
-  removeCnpjMask
+  removeSpecialCharacters,
 } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
@@ -19,6 +18,7 @@ import { DataTable } from '../../../components/DataTable'
 import { Eye, FilterX } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@radix-ui/react-label'
 import {
   Pagination,
   PaginationContent,
@@ -27,6 +27,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { PAGINATION_LIMIT, SELECT_DEFAULT_VALUE } from '@/lib/constants'
 import {
   Select,
   SelectContent,
@@ -37,8 +38,6 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATE, STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { PAGINATION_LIMIT, SELECT_DEFAULT_VALUE } from '@/lib/constants'
-import { Label } from '@radix-ui/react-label'
 
 export default function PartnersPage() {
 
@@ -131,7 +130,7 @@ export default function PartnersPage() {
   }
 
   const [query, setQuery] = useState<URLSearchParams | null>(null)
-  
+
   const filterForm = useForm<IFilterFormValues>({
     mode: 'onSubmit',
     defaultValues: FILTER_FORM_DEFAULT_VALUES
@@ -141,7 +140,7 @@ export default function PartnersPage() {
     const { searchInput, categoryId, cityId, stateId, isOnline, statusId } = data
     const query = new URLSearchParams()
 
-    const searchInputWithoutMask = leaveOnlyDigits(searchInput)
+    const searchInputWithoutMask = removeSpecialCharacters(searchInput)
 
     if (searchInput) query.append('search-input', searchInputWithoutMask)
     if (categoryId && categoryId !== SELECT_DEFAULT_VALUE) query.append('category-id', categoryId)
@@ -495,10 +494,10 @@ export default function PartnersPage() {
         </form>
       </Form>
 
-      {/* table */}
+      {/* Table */}
       <DataTable columns={columns} data={partners} />
 
-      {/* pagination */}
+      {/* Pagination */}
       <Pagination>
         <PaginationContent>
           <PaginationItem>
