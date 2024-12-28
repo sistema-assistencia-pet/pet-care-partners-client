@@ -53,6 +53,21 @@ export default function MembersPage() {
   // --------------------------- PAGE SETUP ---------------------------
   const { push } = useRouter()
   const { toast } = useToast()
+  interface IMember {
+    id: string
+    cpf: string
+    name: string
+    client: {
+      id: string
+      cnpj: string
+      fantasyName: string
+    }
+    status: {
+      id: number
+      translation: string
+    }
+    createdAt: string
+  }
 
   const columns: ColumnDef<IMember>[] = [
     {
@@ -137,22 +152,6 @@ export default function MembersPage() {
   }
 
   // --------------------------- FETCH MEMBERS ---------------------------
-  interface IMember {
-    id: string
-    cpf: string
-    name: string
-    client: {
-      id: string
-      cnpj: string
-      fantasyName: string
-    }
-    status: {
-      id: number
-      translation: string
-    }
-    createdAt: string
-  }
-
   const [members, setMembers] = useState<IMember[]>([])
   const [membersCount, setMembersCount] = useState<number>(0)
 
@@ -343,6 +342,8 @@ export default function MembersPage() {
   // --------------------------- RETURN ---------------------------
   return (
     <DashboardLayout title="Associados" secondaryText={`Total: ${membersCount} associados`}>
+
+      {/* Create Members */}
       <div className="flex justify-between w-full">
         <div className="flex gap-4">
           <AlertDialog>
@@ -352,57 +353,55 @@ export default function MembersPage() {
             <AlertDialogContent>
               <AlertDialogTitle>Escolha o cliente</AlertDialogTitle>
               <AlertDialogDescription>
-                {/* <Form { ...form }> */}
-                  <form
-                    className='flex flex-col gap-4'
-                  >
-                    <div className="flex flex-col space-y-1.5 bg-white">
-                        <select
-                          className='h-8 px-4 border rounded-md'
-                          value={clientIdSelected}
-                          onChange={({ target }) => setClientIdSelected(target.value)}
-                        >
-                          <option value="" />
-                          {
-                            clients.map(({ id, fantasyName }) => (
-                              <option key={uuid()} value={id}>{fantasyName}</option>
-                            ))
-                          }
-                        </select>
+                <form
+                  className='flex flex-col gap-4'
+                >
+                  <div className="flex flex-col space-y-1.5 bg-white">
+                      <select
+                        className='h-8 px-4 border rounded-md'
+                        value={clientIdSelected}
+                        onChange={({ target }) => setClientIdSelected(target.value)}
+                      >
+                        <option value="" />
+                        {
+                          clients.map(({ id, fantasyName }) => (
+                            <option key={uuid()} value={id}>{fantasyName}</option>
+                          ))
+                        }
+                      </select>
+                  </div>
+                  <AlertDialogFooter>
+                    <div className='flex flex-col gap-4 justify-end'>
+                      <AlertDialogCancel type="button">Fechar</AlertDialogCancel>
                     </div>
-                    <AlertDialogFooter>
-                      <div className='flex flex-col gap-4 justify-end'>
-                        <AlertDialogCancel type="button">Fechar</AlertDialogCancel>
-                      </div>
-                      <div className='flex flex-col gap-4'>
-                        <Button
-                          disabled={clientIdSelected === ''}
-                          onClick={() => push(`/painel/clientes/${clientIdSelected}/cadastrar-associado`)}
-                          type="button"
-                          variant="secondary"
-                        >
-                          Cadastrar um associado
-                        </Button>
-                        <Label
-                          htmlFor="file-input"
-                          className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
-                        >
-                          Cadastrar Associados em Lote
-                        </Label>
-                        <Input
-                          accept=".csv"
-                          disabled={clientIdSelected === ''}
-                          className="hidden"
-                          id="file-input"
-                          onChange={handleFileChange}
-                          type="file"
-                          multiple={false}
-                          placeholder='Cadastrar Associados em Lote'
-                        />
-                      </div>
-                    </AlertDialogFooter>
-                  </form>
-                {/* </Form> */}
+                    <div className='flex flex-col gap-4'>
+                      <Button
+                        disabled={clientIdSelected === ''}
+                        onClick={() => push(`/painel/clientes/${clientIdSelected}/cadastrar-associado`)}
+                        type="button"
+                        variant="secondary"
+                      >
+                        Cadastrar um associado
+                      </Button>
+                      <Label
+                        htmlFor="file-input"
+                        className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
+                      >
+                        Cadastrar Associados em Lote
+                      </Label>
+                      <Input
+                        accept=".csv"
+                        disabled={clientIdSelected === ''}
+                        className="hidden"
+                        id="file-input"
+                        onChange={handleFileChange}
+                        type="file"
+                        multiple={false}
+                        placeholder='Cadastrar Associados em Lote'
+                      />
+                    </div>
+                  </AlertDialogFooter>
+                </form>
               </AlertDialogDescription>
             </AlertDialogContent>
           </AlertDialog>

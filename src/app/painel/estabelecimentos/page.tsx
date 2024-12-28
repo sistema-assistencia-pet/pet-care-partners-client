@@ -40,7 +40,6 @@ import { STATE, STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 
 export default function PartnersPage() {
-
   // --------------------------- PAGE SETUP ---------------------------
   interface ICategory {
     id: number

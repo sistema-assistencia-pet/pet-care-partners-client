@@ -5,7 +5,7 @@ import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { applyCnpjMask, captalize, formatCurrency, formatDateTime, removeCnpjMask } from '@/lib/utils'
+import { applyCnpjMask, captalize, formatCurrency, formatDateTime, removeCnpjMask, removeSpecialCharacters } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
@@ -30,43 +30,34 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-
-interface IClient {
-  id: string
-  cnpj: string
-  fantasyName: string
-  segment: string
-  status: string
-  createdAt: string
-}
-
-interface IFormValues {
-  cnpj: string
-  fantasyName: string
-  statusId: string
-}
-
-const PAGINATION_LIMIT = 10
-const FORM_FILTER_DEFAULT_VALUES: IFormValues = {
-  cnpj: '',
-  fantasyName: '',
-  statusId: '1'
-}
+import { PAGINATION_LIMIT } from '@/lib/constants'
+import { Label } from '@radix-ui/react-label'
 
 export default function ClientsPage() {
-  const [clients, setClients] = useState<IClient[]>([])
-  const [clientsCount, setClientsCount] = useState<number>(0)
-  // const [systemTotalSavings, setSystemTotalSavings] = useState<string>(formatCurrency(0))
-  const [skip, setSkip] = useState<number>(0)
-  const [page, setPage] = useState<number>(1)
-  const [query, setQuery] = useState<URLSearchParams | null>(null)
-
-  const form = useForm<IFormValues>({
-    mode: 'onSubmit',
-    defaultValues: FORM_FILTER_DEFAULT_VALUES
-  })
+  // --------------------------- PAGE SETUP ---------------------------
   const { push } = useRouter()
   const { toast } = useToast()
+
+  interface ICity {
+    id: number
+    name: string
+  }
+
+  interface IState {
+    id: number
+    name: string
+  }
+
+  interface IClient {
+    id: string
+    cnpj: string
+    fantasyName: string
+    segment: string
+    availableBalanceInCents: number
+    city: ICity
+    state: IState
+    createdAt: string
+  }
 
   const columns: ColumnDef<IClient>[] = [
     {
@@ -82,8 +73,8 @@ export default function ClientsPage() {
       accessorKey: `segment`
     },
     {
-      header: `Status`,
-      accessorKey: `status`
+      header: `Estado`,
+      accessorKey: `state.name`
     },
     {
       header: `Criado em`,
@@ -106,6 +97,86 @@ export default function ClientsPage() {
     }
   ]
 
+  // --------------------------- FETCH PARTNERS ---------------------------
+  const [clients, setClients] = useState<IClient[]>([])
+  const [clientsCount, setClientsCount] = useState<number>(0)
+
+  const formatClient = (client: IClient): IClient => ({
+    ...client,
+    cnpj: applyCnpjMask(client.cnpj),
+    fantasyName: captalize(client.fantasyName),
+    segment: captalize(client.segment),
+    createdAt: formatDateTime(client.createdAt)
+  })
+
+  const fetchClients = async (query?: URLSearchParams): Promise<void> => {
+    const response = await sendRequest<{ clients: IClient[] }>({
+      endpoint: `/client?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
+      method: 'GET',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      setClients([])
+      setClientsCount(0)
+
+      return
+    }
+
+    const formattedClients = response.data.clients.map((client) => formatClient(client))
+
+    setClients(formattedClients)
+    setClientsCount(parseInt(response.headers[`x-total-count`]))
+  }
+
+  // --------------------------- FILTER ---------------------------
+  interface IFilterFormValues {
+    searchInput: string
+    statusId: string
+  }
+  
+  const FILTER_FORM_DEFAULT_VALUES: IFilterFormValues = {
+    searchInput: '',
+    statusId: '1'
+  }
+
+  const [query, setQuery] = useState<URLSearchParams | null>(null)
+
+  const filterForm = useForm<IFilterFormValues>({
+    mode: 'onSubmit',
+    defaultValues: FILTER_FORM_DEFAULT_VALUES
+  })
+
+  const submitFilter = async (data: IFilterFormValues) => {
+    const { searchInput, statusId } = data
+    const query = new URLSearchParams()
+
+    const searchInputWithoutMask = removeSpecialCharacters(searchInput)
+
+    if (searchInput) query.append('search-input', searchInputWithoutMask)
+    if (statusId) query.append('status-id', statusId)
+
+    setQuery(query)
+    await fetchClients(query)
+  }
+
+  const resetFilter = () => {
+    filterForm.reset(FILTER_FORM_DEFAULT_VALUES)
+
+    setSkip(0)
+    setPage(1)
+
+    fetchClients()
+  }
+
+  // --------------------------- PAGINATION ---------------------------
+  const [skip, setSkip] = useState<number>(0)
+  const [page, setPage] = useState<number>(1)
+
   const handleNextPagination = () => {
     setSkip((prev) => prev + PAGINATION_LIMIT)
     setPage((prev) => prev + 1)
@@ -121,77 +192,18 @@ export default function ClientsPage() {
     setPage(1)
   }
 
-  const submitFilter = async (data: FieldValues) => {
-    const { cnpj, fantasyName, statusId } = data
-    const query = new URLSearchParams()
-
-    const cnpjWithoutMask = removeCnpjMask(cnpj)
-
-    if (cnpj) query.append('cnpj', cnpjWithoutMask)
-    if (fantasyName) query.append('fantasy-name', fantasyName)
-    if (statusId) query.append('status-id', statusId)
-
-    setQuery(query)
-    await fetchClients(query)
-  }
-
-  const resetFilter = () => {
-    form.reset(FORM_FILTER_DEFAULT_VALUES)
-
-    setSkip(0)
-    setPage(1)
-
-    fetchClients()
-  }
-
-  const formatClient = (client: { statusId: number } & Omit<IClient, 'status'>) => ({
-    ...client,
-    cnpj: applyCnpjMask(client.cnpj),
-    fantasyName: captalize(client.fantasyName),
-    segment: captalize(client.segment),
-    createdAt: formatDateTime(client.createdAt),
-    status: STATUS[client.statusId],
-  })
-
-  const fetchClients = async (query?: URLSearchParams) => {
-    const response = await sendRequest<
-      { clients: Array<Omit<IClient, 'status'> & { statusId: number }>, systemTotalSavings: number }
-    >({
-      endpoint: `/client?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
-      method: 'GET',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      setClients([])
-      setClientsCount(0)
-      // setSystemTotalSavings(formatCurrency(0))
-
-      return
-    }
-
-    const formattedClients = response.data.clients.map((client) => formatClient(client))
-
-    setClients(formattedClients)
-    setClientsCount(parseInt(response.headers[`x-total-count`]))
-    // setSystemTotalSavings(formatCurrency(response.data.systemTotalSavings))
-  }
-
-  // Carrega lista de clientes
+  // --------------------------- USE EFFECT ---------------------------
+  // Carrega lista de clientes quando a página carrega ou a paginação muda
   useEffect(() => {
     if (query) {
       fetchClients(query)
     } else fetchClients()
   }, [skip])
 
+  // --------------------------- RETURN ---------------------------
   return (
     <DashboardLayout
       secondaryText={`Total: ${clientsCount} clientes`}
-      // systemTotalSavingsText={`Economia total do sistema: ${systemTotalSavings}`}
       title="Clientes"
     >
       <div className='flex flex-row'>
@@ -199,20 +211,28 @@ export default function ClientsPage() {
           Cadastrar cliente
         </Button>
       </div>
-      <Form { ...form }>
+
+      {/* Filter */}
+      <Form { ...filterForm }>
         <form
-          className='flex flex-row gap-4'
-          onSubmit={form.handleSubmit((data) => submitFilter(data))}
+          className='flex flex-row gap-4 items-end'
+          onSubmit={filterForm.handleSubmit((data) => submitFilter(data))}
         >
-          <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...form.register("cnpj") } placeholder="CNPJ" type="text" />
+
+          {/* Search Input */}
+          <div className="flex flex-col grow space-y-1.5">
+            <Label className='bg-transparent text-sm' htmlFor="searchInput">Pesquisar</Label>
+            <Input
+              { ...filterForm.register("searchInput") }
+              className='bg-white'
+              placeholder="CNPJ / Nome Fantasia / Segmento" type="text"
+            />
           </div>
-          <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...form.register("fantasyName") } placeholder="Nome Fantasia" type="text" />
-          </div>
+
+          {/* Status */}
           <div className="flex flex-col space-y-1.5 bg-white">
           <FormField
-            control={form.control}
+            control={filterForm.control}
             name="statusId"
             render={({ field }) => (
               <FormItem>
@@ -232,6 +252,8 @@ export default function ClientsPage() {
             )}
           />
           </div>
+
+          {/* Buttons */}
           <Button className="w-28" type='submit'>
             Filtrar
           </Button>
@@ -247,8 +269,10 @@ export default function ClientsPage() {
         </form>
       </Form>
 
+      {/* Table */}
       <DataTable columns={columns} data={clients} />
 
+      {/* Pagination */}
       <Pagination>
         <PaginationContent>
           <PaginationItem>
