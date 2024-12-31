@@ -454,16 +454,21 @@ export default function CitiesPage() {
       {/* Filter */}
       <Form { ...filterForm }>
         <form
-          className='flex flex-row gap-4'
+          className='flex flex-row gap-4 items-end'
           onSubmit={filterForm.handleSubmit((data) => submitFilter(data))}
         >
 
-          {/* search input */}
-          <div className="flex flex-col grow space-y-1.5 bg-white">
-            <Input { ...filterForm.register("searchInput") } placeholder="Nome da cidade" type="text" />
+          {/* Search Input */}
+          <div className="flex flex-col grow space-y-1.5">
+            <Label className='bg-transparent text-sm' htmlFor="searchInput">Pesquisar</Label>
+            <Input
+              { ...filterForm.register("searchInput") }
+              className="bg-white"
+              placeholder="Nome da cidade" type="text"
+            />
           </div>
 
-          {/* state */}
+          {/* State */}
           <div className="flex flex-col space-y-1.5 bg-white">
             <FormField
               control={filterForm.control}
@@ -494,7 +499,7 @@ export default function CitiesPage() {
             />
           </div>
 
-          {/* buttons */}
+          {/* Buttons */}
           <Button className="w-28" type='submit'>
             Filtrar
           </Button>
