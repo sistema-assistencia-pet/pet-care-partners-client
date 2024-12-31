@@ -1,7 +1,8 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
+import { v4 as uuid } from 'uuid'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -22,112 +23,200 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
-import { STATUS } from '@/lib/enums'
+import { STATE } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { transformCurrencyStringToNumber, formatCurrency, applyCurrencyMaskReturningString } from '@/lib/utils'
-
-const newClientFormSchema = z.object({
-  cnpj: z
-    .string({ required_error: 'O campo CNPJ é obrigatório.' })
-    .min(14, { message: 'O campo CNPJ deve ter pelo menos 14 caracteres.' })
-    .max(18, { message: 'O campo CNPJ deve ter no máximo 18 caracteres.' }),
-  corporateName: z
-    .string({ required_error: 'O campo Razão Social é obrigatório.' })
-    .min(3, {  message: 'O campo Razão Social deve ter pelo menos 3 caracteres.' }),
-  fantasyName: z
-    .string({ required_error: 'O campo Nome Fantasia é obrigatório.' })
-    .min(3, { message: 'O campo Nome Fantasia deve ter pelo menos 3 caracteres.' }),
-  segment: z
-    .string({ required_error: 'O campo Segmento é obrigatório.' })
-    .min(3, { message: 'O campo Segmento deve ter pelo menos 3 caracteres.' }),
-  address: z
-    .string({ required_error: 'O campo Endereço é obrigatório.' })
-    .min(3, { message: 'O campo Endereço deve ter pelo menos 3 caracteres.' }),
-  state: z
-    .string({ required_error: 'O campo Estado é obrigatório.' })
-    .length(2, { message: 'O campo Estado deve ter 2 caracteres.' }),
-  city: z
-    .string({required_error: 'O campo Cidade é obrigatório.' })
-    .min(3, { message: 'O campo Cidade deve ter pelo menos 3 caracteres.' }),
-  managerName: z
-    .string({required_error: 'O campo Nome do Responsável é obrigatório.'})
-    .min(3, {message: 'O campo Nome do Responsável deve ter pelo menos 3 caracteres.'}),
-  managerPhoneNumber: z
-    .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
-    .min(10, { message: 'O campo Telefone do Responsável deve ter pelo menos 10 caracteres.' }),
-  managerEmail: z
-    .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
-    .email({ message: 'O campo E-mail do Responsável deve ser um e-mail válido.' }),
-  financePhoneNumber: z
-    .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
-    .min(10, { message: 'O campo Telefone do Financeiro deve ter pelo menos 10 caracteres.' }),
-  lumpSum: z.coerce
-    .number({ required_error: 'O campo Valor do Boleto é obrigatório.' })
-    .gte(0, { message: 'O campo Valor do Boleto deve ser maior ou igual a 0.' })
-    .optional()
-    .transform(value => Math.floor(value || 0)),
-  unitValue: z.coerce
-    .number({ required_error: 'O campo Valor Unitário é obrigatório.' })
-    .gte(0, { message: 'O campo Valor Unitário deve ser maior ou igual a 0.' })
-    .optional()
-    .transform(value => Math.floor(value || 0)),
-  contractUrl: z
-    .string({ required_error: 'O campo URL do Contrato é obrigatório.' })
-    .url({ message: 'O campo URL do Contrato deve ser uma URL válida.' })
-    .optional(),
-  statusId: z.coerce
-    .number({ required_error: 'O campo Status é obrigatório.' })
-    .gte(1, { message: 'O campo Status deve 1 (ativo), 2 (inativo) ou 3 (excluído).' })
-    .lte(3, { message: 'O campo Status deve 1 (ativo), 2 (inativo) ou 3 (excluído).' })
-})
-
-type NewClientFormSchema = z.infer<typeof newClientFormSchema>
-
-const NEW_CLIENT_FORM_DEFAULT_VALUES: NewClientFormSchema = {
-  cnpj: '',
-  corporateName: '',
-  fantasyName: '',
-  segment: '',
-  address: '',
-  state: '',
-  city: '',
-  managerName: '',
-  managerPhoneNumber: '',
-  managerEmail: '',
-  financePhoneNumber: '',
-  lumpSum: 0,
-  unitValue: 0,
-  contractUrl: '',
-  statusId: STATUS.Ativo
-}
+import { transformCurrencyStringToNumber, formatCurrency, applyCurrencyMaskReturningString, captalize, removeCnpjMask, leaveOnlyDigits, removeCpfMask } from '@/lib/utils'
+import { useEffect, useState } from 'react'
+import { SELECT_DEFAULT_VALUE } from '@/lib/constants'
+import { Separator } from '@/components/ui/separator'
 
 export default function RegisterClient() {
-  const form = useForm<NewClientFormSchema>({
-    mode: 'onBlur',
-    defaultValues: NEW_CLIENT_FORM_DEFAULT_VALUES,
-    resolver: zodResolver(newClientFormSchema)
-  })
-
+  // --------------------------- PAGE SETUP ---------------------------
   const { back } = useRouter()
   const { toast } = useToast()
 
-  const formatNewClientData = (newClientData: NewClientFormSchema): NewClientFormSchema => ({
-    ...newClientData,
-    cnpj: newClientData.cnpj
-      .replaceAll('.', '').replace('/', '').replace('-', '').replaceAll('_', ''),
-    managerPhoneNumber: newClientData.managerPhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
-    financePhoneNumber: newClientData.financePhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', '')
+  // --------------------------- CREATE CLIENT ---------------------------
+  interface IAddress {
+    cep?: string;
+    street?: string;
+    number?: string;
+    complement?: string;
+    neighborhood?: string;
+    cityId?: number;
+    stateId?: number;
+  }
+
+  interface IClientToBeCreated {
+    cnpj: string
+    corporateName: string
+    fantasyName: string
+    segment: string
+    address: IAddress
+    managerName: string
+    managerCpf: string
+    managerPassword: string
+    managerPhoneNumber: string
+    managerEmail: string
+    financePhoneNumber: string
+    lumpSumInCents?: number
+    unitValueInCents?: number
+    contractUrl?: string
+  }
+
+  const createClientFormSchema = z.object({
+    cnpj: z
+      .string({ required_error: 'O campo CNPJ é obrigatório.' })
+      .length(18, { message: 'O campo CNPJ deve ter 14 caracteres.' }),
+    corporateName: z
+      .string({ required_error: 'O campo Razão Social é obrigatório.' }),    
+    fantasyName: z
+      .string({ required_error: 'O campo Nome Fantasia é obrigatório.' }),
+    segment: z
+      .string({ required_error: 'O campo Segmento é obrigatório.' }),
+    address: z.object({
+      cep: z
+        .string({ required_error: 'O campo CEP é obrigatório.' })
+        .length(8, { message: 'O campo CEP deve ter 8 caracteres.' })
+        .optional(),
+      street: z
+        .string({ required_error: 'O campo Rua é obrigatório.' })
+        .min(3, { message: 'O campo Rua deve ter pelo menos 3 caracteres.' })
+        .optional(),
+      number: z
+        .string({ required_error: 'O campo Número é obrigatório.' })
+        .optional(),
+      complement: z
+        .string({ required_error: 'O campo Complemento é obrigatório.' })
+        .optional(),
+      neighborhood: z
+        .string({ required_error: 'O campo Bairro é obrigatório.' })
+        .optional(),
+      cityId: z
+        .string({required_error: 'O campo Cidade é obrigatório.' })
+        .min(1, { message: 'O campo Cidade é obrigatório.' })
+        .optional(),
+      stateId: z
+        .string({required_error: 'O campo Estado é obrigatório.' })
+        .min(1, { message: 'O campo Estado é obrigatório.' })
+        .optional()
+      }),
+    managerCpf: z
+      .string({required_error: 'O campo CPF do Responsável é obrigatório.'})
+      .length(11, {message: 'O campo CPF do Responsável deve ter 11 caracteres.'}),
+    managerPassword: z
+      .string({required_error: 'O campo Senha do Responsável é obrigatório.'})
+      .min(8, {message: 'O campo Senha do Responsável deve ter pelo menos 8 caracteres.'}),
+    managerName: z
+      .string({required_error: 'O campo Nome do Responsável é obrigatório.'})
+      .min(3, {message: 'O campo Nome do Responsável deve ter pelo menos 3 caracteres.'}),
+    managerPhoneNumber: z
+      .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
+      .min(14, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
+      .max(15, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' }),
+    managerEmail: z
+      .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
+      .email({ message: 'O campo E-mail do Responsável deve ser um e-mail válido.' }),
+    financePhoneNumber: z
+      .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
+      .min(14, { message: 'O campo Telefone do Financeiro deve ter 10 ou 11 caracteres.' })
+      .max(15, { message: 'O campo Telefone do Financeiro deve ter 10 ou 11 caracteres.' }),
+    lumpSum: z
+      .string({ required_error: 'O campo Valor do Boleto é obrigatório.' })
+      .optional(),
+    unitValue: z
+      .string({ required_error: 'O campo Valor Unitário é obrigatório.' })
+      .optional(),
+    contractUrl: z
+      .string({ required_error: 'O campo URL do Contrato é obrigatório.' })
+      .optional()
   })
 
-  const postClient = async (newClientData: NewClientFormSchema) => {
-    const formattedNewClientData = formatNewClientData(newClientData)
+  // lumpSum: z.coerce
+  //     .number({ required_error: 'O campo Valor do Boleto é obrigatório.' })
+  //     .gte(0, { message: 'O campo Valor do Boleto deve ser maior ou igual a 0.' })
+  //     .optional()
+  //     .transform(value => Math.floor(value || 0)),
+  //   unitValue: z.coerce
+  //     .number({ required_error: 'O campo Valor Unitário é obrigatório.' })
+  //     .gte(0, { message: 'O campo Valor Unitário deve ser maior ou igual a 0.' })
+  //     .optional()
+  //     .transform(value => Math.floor(value || 0)),
+  
+  type CreateClientFormSchema = z.infer<typeof createClientFormSchema>
+  
+  const CREATE_CLIENT_FORM_DEFAULT_VALUES: CreateClientFormSchema = {
+    cnpj: '',
+    corporateName: '',
+    fantasyName: '',
+    segment: '',
+    address: {
+      cep: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      cityId: SELECT_DEFAULT_VALUE,
+      stateId: SELECT_DEFAULT_VALUE
+    },
+    managerCpf: '',
+    managerPassword: '',
+    managerName: '',
+    managerPhoneNumber: '',
+    managerEmail: '',
+    financePhoneNumber: '',
+    lumpSum: '',
+    unitValue: '',
+    contractUrl: ''
+  }
+
+  const createClientForm = useForm<CreateClientFormSchema>({
+    mode: 'onBlur',
+    defaultValues: CREATE_CLIENT_FORM_DEFAULT_VALUES,
+    resolver: zodResolver(createClientFormSchema)
+  })
+
+  const formatCreateClientData = (createClientData: CreateClientFormSchema): IClientToBeCreated => {
+    let stateId = createClientData.address?.stateId
+    let cityId = createClientData.address?.cityId
+
+    if (
+      (stateId === SELECT_DEFAULT_VALUE) ||
+      (stateId === '') ||
+      (stateId === null)
+    ) stateId = undefined
+    if (
+      (cityId === SELECT_DEFAULT_VALUE) ||
+      (cityId === '') ||
+      (cityId === null)
+    ) cityId = undefined
+
+    return {
+      ...createClientData,
+      cnpj: removeCnpjMask(createClientData.cnpj),
+      managerPhoneNumber: leaveOnlyDigits(createClientData.managerPhoneNumber),
+      financePhoneNumber: leaveOnlyDigits(createClientData.financePhoneNumber),
+      managerCpf: removeCpfMask(createClientData.managerCpf),
+      unitValueInCents: parseInt(leaveOnlyDigits(createClientData.unitValue ?? '')),
+      lumpSumInCents: parseInt(leaveOnlyDigits(createClientData.lumpSum ?? '')),
+      address: {
+        cep: createClientData.address?.cep ?? '',
+        street: createClientData.address?.street ?? '',
+        number: createClientData.address?.number ?? '',
+        complement: createClientData.address?.complement ?? '',
+        neighborhood: createClientData.address?.neighborhood ?? '',
+        cityId: cityId !== undefined ? parseInt(cityId): cityId,
+        stateId: stateId !== undefined ? parseInt(stateId): stateId
+      }
+    }
+  }
+
+  const createClient = async (createClientData: CreateClientFormSchema): Promise<void> => {
+    const formattedCreateClientData = formatCreateClientData(createClientData)
     
     const response = await sendRequest({
       endpoint: '/client',
       method: 'POST',
-      data: formattedNewClientData
+      data: formattedCreateClientData
     })
 
     if (response.error) {
@@ -139,54 +228,113 @@ export default function RegisterClient() {
       toast({
         description: response.message
       })
-    }
 
-  back()
+      back()
+    }
   }
 
+  // --------------------------- FETCH CITIES ---------------------------
+  interface ICity {
+    id: number
+    name: string
+  }
+
+  const selectedStateId = createClientForm.watch('address.stateId')
+
+  const [cities, setCities] = useState<ICity[]>([])
+
+  const formatCity = (city: ICity): ICity => ({
+    ...city,
+    name: captalize(city.name),
+  })
+
+  const fetchCities = async (stateId: string) => {
+    const response = await sendRequest<{ cities: ICity[] }>({
+      endpoint: `/city/?state-id=${stateId}`,
+      method: 'GET',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      setCities([])
+
+      return
+    }
+
+    const formattedCities = response.data.cities.map((city) => formatCity(city))
+
+    setCities(formattedCities)
+  }
+
+  // --------------------------- CURRENCY INPUT HANDLER ---------------------------
+  const formatCurrency = (value: string) => {
+    let formattedValue = value.replace(/\D/g, "")
+
+    formattedValue = formattedValue.replace(/^0+/, '');
+    formattedValue = formattedValue.replace(/(\d)(\d{2})$/, "$1,$2")
+    formattedValue = formattedValue.replace(/(?=(\d{3})+(\D))\B/g, ".")
+
+    return formattedValue;
+  };
+
+  // --------------------------- USE EFFECT ---------------------------
+  // Carrega lista de cidades quando um estado é selecionado
+  // e limpa cidade quando outro estado é selecionado
+  useEffect(() => {
+    if (typeof selectedStateId === 'string' && selectedStateId !== SELECT_DEFAULT_VALUE) {
+      createClientForm.setValue('address.cityId', SELECT_DEFAULT_VALUE)
+      fetchCities(selectedStateId)
+    }
+  }, [selectedStateId])
+
+  // --------------------------- RETURN ---------------------------
   return (
     <DashboardLayout title="Cadastrar Novo Cliente">
-      <Form { ...form }>
+      <Form { ...createClientForm }>
         <form
           className='flex flex-col my-4 gap-4'
-          onSubmit={form.handleSubmit((data) => postClient(data))}
+          onSubmit={createClientForm.handleSubmit((data) => createClient(data))}
         >
           <DetailsRow>
             <InputContainer size="w-1/2">
               <Label htmlFor="fantasyName">Nome Fantasia</Label>
-              <Input className="bg-white" { ...form.register("fantasyName") } />
+              <Input className="bg-white" { ...createClientForm.register("fantasyName") } />
               {
-                form.formState.errors.fantasyName
-                  && <span className="text-red-500 text-xs">{form.formState.errors.fantasyName.message}</span>
+                createClientForm.formState.errors.fantasyName
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.fantasyName.message}</span>
               }
             </InputContainer>
             <InputContainer size="w-1/2">
               <Label htmlFor="corporateName">Razão Social</Label>
-              <Input className="bg-white" { ...form.register("corporateName") } />
+              <Input className="bg-white" { ...createClientForm.register("corporateName") } />
               {
-                form.formState.errors.corporateName
-                  && <span className="text-red-500 text-xs">{form.formState.errors.corporateName.message}</span>
+                createClientForm.formState.errors.corporateName
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.corporateName.message}</span>
               }
             </InputContainer>
           </DetailsRow>
 
           <DetailsRow>
-            <InputContainer size="w-1/3">
+            <InputContainer size="w-1/2">
               <Label htmlFor="cnpj">CNPJ</Label>
               <InputMask
                 className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 mask="99.999.999/9999-99"
-                { ...form.register("cnpj",) }
+                { ...createClientForm.register("cnpj",) }
               />
               {
-                form.formState.errors.cnpj
-                  && <span className="text-red-500 text-xs">{form.formState.errors.cnpj.message}</span>
+                createClientForm.formState.errors.cnpj
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.cnpj.message}</span>
               }
             </InputContainer>
-            <InputContainer size="w-1/3">
+            <InputContainer size="w-1/2">
               <Label htmlFor="segment">Segmento</Label>
               <FormField
-                control={form.control}
+                control={createClientForm.control}
                 name="segment"
                 render={({ field }) => (
                   <FormItem>
@@ -211,100 +359,78 @@ export default function RegisterClient() {
                 )}
               />
               {
-                form.formState.errors.segment
-                  && <span className="text-red-500 text-xs">{form.formState.errors.segment.message}</span>
-              }
-            </InputContainer>
-            <InputContainer size="w-1/3">
-              <Label htmlFor="statusId">Status</Label>
-              <FormField
-                control={form.control}
-                name="statusId"
-                render={({ field }) => (
-                  <FormItem>
-                    <Select onValueChange={field.onChange} defaultValue={field.value.toString()}>
-                      <FormControl>
-                        <SelectTrigger className="bg-white">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="1">{STATUS[1]}</SelectItem>
-                        <SelectItem value="2">{STATUS[2]}</SelectItem>
-                        <SelectItem value="3">{STATUS[3]}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              {
-                form.formState.errors.statusId
-                  && <span className="text-red-500 text-xs">{form.formState.errors.statusId.message}</span>
+                createClientForm.formState.errors.segment
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.segment.message}</span>
               }
             </InputContainer>
           </DetailsRow>
 
           <DetailsRow>
-            {/* <InputContainer size="w-1/3">
+            <InputContainer size="w-1/4">
               <Label htmlFor="lumpSum">Valor do Boleto</Label>
-              <CurrencyInput
-                { ...form.register("lumpSum") }
-                className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                allowNegativeValue={false}
-                fixedDecimalLength={2}
-                disableGroupSeparators={true}
-                placeholder="00.00"
+              <Controller
+                name="lumpSum"
+                control={createClientForm.control}
+                render={({ field }) => (
+                  <Input
+                    className="bg-white"
+                    value={field.value}
+                    onChange={(e) => field.onChange(formatCurrency(e.target.value))}
+                    placeholder="00,00"
+                  />
+                )}
               />
               {
-                form.formState.errors.lumpSum
-                  && <span className="text-red-500 text-xs">{form.formState.errors.lumpSum.message}</span>
-              }
-            </InputContainer> */}
-            <InputContainer size="w-1/3">
-              <Label htmlFor="lumpSum">Valor do Boleto</Label>
-              <Input
-                className="bg-white"
-                type="number"
-                { ...form.register("lumpSum") }
-              />
-              {
-                form.formState.errors.lumpSum
-                  && <span className="text-red-500 text-xs">{form.formState.errors.lumpSum.message}</span>
+                createClientForm.formState.errors.lumpSum
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.lumpSum.message}</span>
               }
             </InputContainer>
-            {/* <InputContainer size="w-1/3">
+            <InputContainer size="w-1/4">
               <Label htmlFor="unitValue">Valor Unitário</Label>
-              <CurrencyInput
-                { ...form.register("unitValue") }
-                className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                allowNegativeValue={false}
-                fixedDecimalLength={2}
-                disableGroupSeparators={true}
-                placeholder="00.00"
+              <Controller
+                name="unitValue"
+                control={createClientForm.control}
+                render={({ field }) => (
+                  <Input
+                    className="bg-white"
+                    value={field.value}
+                    onChange={(e) => field.onChange(formatCurrency(e.target.value))}
+                    placeholder="00,00"
+                  />
+                )}
               />
               {
-                form.formState.errors.unitValue
-                  && <span className="text-red-500 text-xs">{form.formState.errors.unitValue.message}</span>
-              }
-            </InputContainer> */}
-            <InputContainer size="w-1/3">
-              <Label htmlFor="unitValue">Valor Unitário</Label>
-              <Input
-                className="bg-white"
-                type="number"
-                { ...form.register("unitValue") }
-              />
-              {
-                form.formState.errors.unitValue
-                  && <span className="text-red-500 text-xs">{form.formState.errors.unitValue.message}</span>
+                createClientForm.formState.errors.unitValue
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.unitValue.message}</span>
               }
             </InputContainer>
-            <InputContainer size="w-1/3">
+            <InputContainer size="w-2/4">
               <Label htmlFor="contractUrl">URL do Contrato</Label>
-              <Input className="bg-white" { ...form.register("contractUrl") } />
+              <Input className="bg-white" { ...createClientForm.register("contractUrl") } />
               {
-                form.formState.errors.contractUrl
-                  && <span className="text-red-500 text-xs">{form.formState.errors.contractUrl.message}</span>
+                createClientForm.formState.errors.contractUrl
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.contractUrl.message}</span>
+              }
+            </InputContainer>
+          </DetailsRow>
+
+          <Separator />
+
+          <DetailsRow>
+            <InputContainer size="w-1/2">
+              <Label htmlFor="managerCpf">CPF do Responsável</Label>
+              <Input className="bg-white" { ...createClientForm.register("managerCpf") } />
+              {
+                createClientForm.formState.errors.managerCpf
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.managerCpf.message}</span>
+              }
+            </InputContainer>
+            <InputContainer size="w-1/2">
+              <Label htmlFor="managerPassword">Senha do Responsável</Label>
+              <Input type='password' className="bg-white" { ...createClientForm.register("managerPassword") } />
+              {
+                createClientForm.formState.errors.managerPassword
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.managerPassword.message}</span>
               }
             </InputContainer>
           </DetailsRow>
@@ -312,18 +438,18 @@ export default function RegisterClient() {
           <DetailsRow>
             <InputContainer size="w-1/2">
               <Label htmlFor="managerName">Nome do Responsável</Label>
-              <Input className="bg-white" { ...form.register("managerName") } />
+              <Input className="bg-white" { ...createClientForm.register("managerName") } />
               {
-                form.formState.errors.managerName
-                  && <span className="text-red-500 text-xs">{form.formState.errors.managerName.message}</span>
+                createClientForm.formState.errors.managerName
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.managerName.message}</span>
               }
             </InputContainer>
             <InputContainer size="w-1/2">
               <Label htmlFor="managerEmail">E-mail do Responsável</Label>
-              <Input className="bg-white" { ...form.register("managerEmail") } />
+              <Input className="bg-white" { ...createClientForm.register("managerEmail") } />
               {
-                form.formState.errors.managerEmail
-                  && <span className="text-red-500 text-xs">{form.formState.errors.managerEmail.message}</span>
+                createClientForm.formState.errors.managerEmail
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.managerEmail.message}</span>
               }
             </InputContainer>
           </DetailsRow>
@@ -334,11 +460,11 @@ export default function RegisterClient() {
               <InputMask
                 className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 mask="(99) 99999-9999"
-                { ...form.register("managerPhoneNumber",) }
+                { ...createClientForm.register("managerPhoneNumber",) }
               />
               {
-                form.formState.errors.managerPhoneNumber
-                  && <span className="text-red-500 text-xs">{form.formState.errors.managerPhoneNumber.message}</span>
+                createClientForm.formState.errors.managerPhoneNumber
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.managerPhoneNumber.message}</span>
               }
             </InputContainer>
             <InputContainer size="w-1/2">
@@ -346,47 +472,126 @@ export default function RegisterClient() {
               <InputMask
                 className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 mask="(99) 99999-9999"
-                { ...form.register("financePhoneNumber",) }
+                { ...createClientForm.register("financePhoneNumber",) }
               />
               {
-                form.formState.errors.financePhoneNumber
-                  && <span className="text-red-500 text-xs">{form.formState.errors.financePhoneNumber.message}</span>
+                createClientForm.formState.errors.financePhoneNumber
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.financePhoneNumber.message}</span>
+              }
+            </InputContainer>
+          </DetailsRow>
+
+          <Separator />
+
+          <DetailsRow>
+            <InputContainer size="w-1/5">
+              <Label htmlFor="address.cep">CEP</Label>
+              <Input className="bg-white" { ...createClientForm.register("address.cep") } />
+              {
+                createClientForm.formState.errors.address?.cep
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.address.cep.message}</span>
+              }
+            </InputContainer>
+            <InputContainer size="w-4/5">
+              <Label htmlFor="address.street">Rua</Label>
+              <Input className="bg-white" { ...createClientForm.register("address.street") } />
+              {
+                createClientForm.formState.errors.address?.street
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.address.street.message}</span>
               }
             </InputContainer>
           </DetailsRow>
 
           <DetailsRow>
-            <InputContainer size="w-1/3">
-              <Label htmlFor="address">Endereço</Label>
-              <Input className="bg-white" { ...form.register("address") } />
+            <InputContainer size="w-1/5">
+              <Label htmlFor="address.number">Número</Label>
+              <Input className="bg-white" { ...createClientForm.register("address.number") } />
               {
-                form.formState.errors.address
-                  && <span className="text-red-500 text-xs">{form.formState.errors.address.message}</span>
+                createClientForm.formState.errors.address?.number
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.address.number.message}</span>
               }
             </InputContainer>
-            <InputContainer size="w-1/3">
-              <Label htmlFor="city">Cidade</Label>
-              <Input className="bg-white" { ...form.register("city") } />
+            <InputContainer size="w-1/5">
+              <Label htmlFor="address.complement">Complemento</Label>
+              <Input className="bg-white" { ...createClientForm.register("address.complement") } />
               {
-                form.formState.errors.city
-                  && <span className="text-red-500 text-xs">{form.formState.errors.city.message}</span>
+                createClientForm.formState.errors.address?.complement
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.address.complement.message}</span>
               }
             </InputContainer>
-            <InputContainer size="w-1/3">
-              <Label htmlFor="state">Estado</Label>
-              <InputMask
-                className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                mask="aa"
-                { ...form.register("state",) }
+            <InputContainer size="w-1/5">
+              <Label htmlFor="address.neighborhood">Bairro</Label>
+              <Input className="bg-white" { ...createClientForm.register("address.neighborhood") } />
+              {
+                createClientForm.formState.errors.address?.neighborhood
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.address.neighborhood.message}</span>
+              }
+            </InputContainer>
+            <InputContainer size="w-1/5">
+              <Label htmlFor="address.stateId">Estado</Label>
+              <FormField
+                control={createClientForm.control}
+                name="address.stateId"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                      {
+                        Object
+                          .entries(STATE)
+                          .filter(([key, _value]) => isNaN(Number(key)))
+                          .map(([key, value]) => (
+                            <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                          )
+                        )
+                      }
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
               />
               {
-                form.formState.errors.state
-                  && <span className="text-red-500 text-xs">{form.formState.errors.state.message}</span>
+                createClientForm.formState.errors.address?.stateId
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.address.stateId.message}</span>
+              }
+            </InputContainer>
+            <InputContainer size="w-1/5">
+              <Label htmlFor="address.cityId">Cidade</Label>
+              <FormField
+                control={createClientForm.control}
+                name="address.cityId"
+                render={({ field }) => (
+                  <FormItem>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {
+                          cities.map(({ id, name }) => (
+                            <SelectItem key={uuid()} value={id.toString()}>{name}</SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+              {
+                createClientForm.formState.errors.address?.cityId
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.address.cityId.message}</span>
               }
             </InputContainer>
           </DetailsRow>
 
-          <Button className="my-4" disabled={!form.formState.isValid} type='submit'>
+          <Button className="my-4" disabled={!createClientForm.formState.isValid} type='submit'>
             Cadastrar cliente
           </Button>
         </form>

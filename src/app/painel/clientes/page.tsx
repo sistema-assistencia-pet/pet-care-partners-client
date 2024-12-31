@@ -1,17 +1,23 @@
 'use client'
 
-import { FieldValues, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { applyCnpjMask, captalize, formatCurrency, formatDateTime, removeCnpjMask, removeSpecialCharacters } from '@/lib/utils'
+import {
+  applyCnpjMask,
+  captalize,
+  formatDateTime,
+  removeSpecialCharacters
+} from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
 import { Eye, FilterX } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Label } from '@radix-ui/react-label'
 import {
   Pagination,
   PaginationContent,
@@ -20,6 +26,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { PAGINATION_LIMIT } from '@/lib/constants'
 import {
   Select,
   SelectContent,
@@ -30,8 +37,6 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { PAGINATION_LIMIT } from '@/lib/constants'
-import { Label } from '@radix-ui/react-label'
 
 export default function ClientsPage() {
   // --------------------------- PAGE SETUP ---------------------------

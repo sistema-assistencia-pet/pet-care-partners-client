@@ -123,7 +123,7 @@ export default function RegisterPartner() {
     managerPhoneNumber: z
       .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
       .min(10, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
-      .min(11, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
+      .max(11, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
       .optional(),
     managerEmail: z
       .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
@@ -131,7 +131,7 @@ export default function RegisterPartner() {
     businessPhoneNumber: z
       .string({ required_error: 'O campo Telefone Comercial é obrigatório.' })
       .min(10, { message: 'O campo Telefone Comercial deve ter 10 ou 11 caracteres.' })
-      .min(11, { message: 'O campo Telefone Comercial deve ter 10 ou 11 caracteres.' })
+      .max(11, { message: 'O campo Telefone Comercial deve ter 10 ou 11 caracteres.' })
       .optional(),
     about: z
       .string({ required_error: 'O campo Sobre é obrigatório.' })
@@ -140,7 +140,7 @@ export default function RegisterPartner() {
       .string({ required_error: 'O campo Horário de Funcionamento é obrigatório.' })
       .optional()
   })
-  
+
   type CreatePartnerFormSchema = z.infer<typeof createPartnerFormSchema>
   
   const CREATE_PARTNER_FORM_DEFAULT_VALUES: CreatePartnerFormSchema = {
