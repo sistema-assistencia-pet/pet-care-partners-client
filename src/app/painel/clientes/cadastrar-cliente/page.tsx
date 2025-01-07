@@ -7,7 +7,6 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { Button } from '@/components/ui/button'
-import CurrencyInput from 'react-currency-input-field'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DetailsRow } from '@/components/DetailsRow'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
@@ -25,7 +24,13 @@ import {
 import { sendRequest } from '@/lib/sendRequest'
 import { STATE } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { transformCurrencyStringToNumber, formatCurrency, applyCurrencyMaskReturningString, captalize, removeCnpjMask, leaveOnlyDigits, removeCpfMask } from '@/lib/utils'
+import {
+  captalize,
+  formatCurrency,
+  leaveOnlyDigits,
+  removeCnpjMask,
+  removeCpfMask
+} from '@/lib/utils'
 import { useEffect, useState } from 'react'
 import { SELECT_DEFAULT_VALUE } from '@/lib/constants'
 import { Separator } from '@/components/ui/separator'
@@ -120,27 +125,16 @@ export default function RegisterClient() {
       .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
       .min(14, { message: 'O campo Telefone do Financeiro deve ter 10 ou 11 caracteres.' })
       .max(15, { message: 'O campo Telefone do Financeiro deve ter 10 ou 11 caracteres.' }),
-    lumpSum: z
+    lumpSumInCents: z
       .string({ required_error: 'O campo Valor do Boleto é obrigatório.' })
       .optional(),
-    unitValue: z
+    unitValueInCents: z
       .string({ required_error: 'O campo Valor Unitário é obrigatório.' })
       .optional(),
     contractUrl: z
       .string({ required_error: 'O campo URL do Contrato é obrigatório.' })
       .optional()
   })
-
-  // lumpSum: z.coerce
-  //     .number({ required_error: 'O campo Valor do Boleto é obrigatório.' })
-  //     .gte(0, { message: 'O campo Valor do Boleto deve ser maior ou igual a 0.' })
-  //     .optional()
-  //     .transform(value => Math.floor(value || 0)),
-  //   unitValue: z.coerce
-  //     .number({ required_error: 'O campo Valor Unitário é obrigatório.' })
-  //     .gte(0, { message: 'O campo Valor Unitário deve ser maior ou igual a 0.' })
-  //     .optional()
-  //     .transform(value => Math.floor(value || 0)),
   
   type CreateClientFormSchema = z.infer<typeof createClientFormSchema>
   
@@ -164,8 +158,8 @@ export default function RegisterClient() {
     managerPhoneNumber: '',
     managerEmail: '',
     financePhoneNumber: '',
-    lumpSum: '',
-    unitValue: '',
+    lumpSumInCents: '',
+    unitValueInCents: '',
     contractUrl: ''
   }
 
@@ -196,8 +190,8 @@ export default function RegisterClient() {
       managerPhoneNumber: leaveOnlyDigits(createClientData.managerPhoneNumber),
       financePhoneNumber: leaveOnlyDigits(createClientData.financePhoneNumber),
       managerCpf: removeCpfMask(createClientData.managerCpf),
-      unitValueInCents: parseInt(leaveOnlyDigits(createClientData.unitValue ?? '')),
-      lumpSumInCents: parseInt(leaveOnlyDigits(createClientData.lumpSum ?? '')),
+      unitValueInCents: parseInt(leaveOnlyDigits(createClientData.unitValueInCents ?? '')),
+      lumpSumInCents: parseInt(leaveOnlyDigits(createClientData.lumpSumInCents ?? '')),
       address: {
         cep: createClientData.address?.cep ?? '',
         street: createClientData.address?.street ?? '',
@@ -269,17 +263,6 @@ export default function RegisterClient() {
 
     setCities(formattedCities)
   }
-
-  // --------------------------- CURRENCY INPUT HANDLER ---------------------------
-  const formatCurrency = (value: string) => {
-    let formattedValue = value.replace(/\D/g, "")
-
-    formattedValue = formattedValue.replace(/^0+/, '');
-    formattedValue = formattedValue.replace(/(\d)(\d{2})$/, "$1,$2")
-    formattedValue = formattedValue.replace(/(?=(\d{3})+(\D))\B/g, ".")
-
-    return formattedValue;
-  };
 
   // --------------------------- USE EFFECT ---------------------------
   // Carrega lista de cidades quando um estado é selecionado
@@ -369,7 +352,7 @@ export default function RegisterClient() {
             <InputContainer size="w-1/4">
               <Label htmlFor="lumpSum">Valor do Boleto</Label>
               <Controller
-                name="lumpSum"
+                name="lumpSumInCents"
                 control={createClientForm.control}
                 render={({ field }) => (
                   <Input
@@ -381,14 +364,14 @@ export default function RegisterClient() {
                 )}
               />
               {
-                createClientForm.formState.errors.lumpSum
-                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.lumpSum.message}</span>
+                createClientForm.formState.errors.lumpSumInCents
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.lumpSumInCents.message}</span>
               }
             </InputContainer>
             <InputContainer size="w-1/4">
               <Label htmlFor="unitValue">Valor Unitário</Label>
               <Controller
-                name="unitValue"
+                name="unitValueInCents"
                 control={createClientForm.control}
                 render={({ field }) => (
                   <Input
@@ -400,8 +383,8 @@ export default function RegisterClient() {
                 )}
               />
               {
-                createClientForm.formState.errors.unitValue
-                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.unitValue.message}</span>
+                createClientForm.formState.errors.unitValueInCents
+                  && <span className="text-red-500 text-xs">{createClientForm.formState.errors.unitValueInCents.message}</span>
               }
             </InputContainer>
             <InputContainer size="w-2/4">

@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
-import { STATE, STATUS } from '@/lib/enums'
+import { STATE } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 import { SELECT_DEFAULT_VALUE } from '@/lib/constants'
 import { Separator } from '@/components/ui/separator'

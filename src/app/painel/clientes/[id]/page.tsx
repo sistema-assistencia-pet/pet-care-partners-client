@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { useParams, useRouter } from 'next/navigation'
+import { v4 as uuid } from 'uuid'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -17,13 +18,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { applyCnpjMask, captalize, formatCurrency, formatDateTime, applyPhoneNumberMask } from '@/lib/utils'
+import {
+  applyCnpjMask,
+  captalize,
+  formatCurrency,
+  formatDateTime,
+  applyPhoneNumberMask,
+  removeCnpjMask,
+  leaveOnlyDigits,
+  removeCpfMask,
+  applyCepMask,
+  transformCurrencyFromCentsToBRLString,
+  transformCurrencyFromBRLStringToCents
+} from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import CurrencyInput from 'react-currency-input-field'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DetailsField } from '@/components/DetailsField'
 import { DetailsRow } from '@/components/DetailsRow'
-import { Form } from '@/components/ui/form'
+import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { InputContainer } from '@/components/InputContainer'
 import InputMask from "react-input-mask"
@@ -32,156 +45,93 @@ import Link from 'next/link'
 import { Pencil, Trash2 } from 'lucide-react'
 import { sendRequest } from '@/lib/sendRequest'
 import { Separator } from '@/components/ui/separator'
-import { STATUS } from '@/lib/enums'
+import { STATE, STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-
-
-interface IClientDetailed {
-  id: string
-  cnpj: string
-  corporateName: string
-  fantasyName: string
-  segment: string
-  address: string
-  state: string
-  city: string
-  managerName: string
-  managerPhoneNumber: string
-  managerEmail: string
-  financePhoneNumber: string
-  lumpSum: string
-  unitValue: string
-  totalSavings: string
-  contractUrl: string
-  status: string
-  createdAt: string
-}
-
-type CLientDetailedFromAPI = Omit<IClientDetailed, 'lumpSum' | 'unitValue' | 'totalSavings' | 'status'> & { lumpSum: number, unitValue: number, totalSavings: number, statusId: number }
-
-const updateClientFormSchema = z.object({
-  corporateName: z
-    .string({ required_error: 'O campo Razão Social é obrigatório.' })
-    .min(3, {  message: 'O campo Razão Social deve ter pelo menos 3 caracteres.' })
-    .optional(),
-  fantasyName: z
-    .string({ required_error: 'O campo Nome Fantasia é obrigatório.' })
-    .min(3, { message: 'O campo Nome Fantasia deve ter pelo menos 3 caracteres.' })
-    .optional(),
-  segment: z
-    .string({ required_error: 'O campo Segmento é obrigatório.' })
-    .min(3, { message: 'O campo Segmento deve ter pelo menos 3 caracteres.' })
-    .optional(),
-  address: z
-    .string({ required_error: 'O campo Endereço é obrigatório.' })
-    .min(3, { message: 'O campo Endereço deve ter pelo menos 3 caracteres.' })
-    .optional(),
-  state: z
-    .string({ required_error: 'O campo Estado é obrigatório.' })
-    .length(2, { message: 'O campo Estado deve ter 2 caracteres.' })
-    .optional(),
-  city: z
-    .string({required_error: 'O campo Cidade é obrigatório.' })
-    .min(3, { message: 'O campo Cidade deve ter pelo menos 3 caracteres.' })
-    .optional(),
-  managerName: z
-    .string({required_error: 'O campo Nome do Responsável é obrigatório.'})
-    .min(3, {message: 'O campo Nome do Responsável deve ter pelo menos 3 caracteres.'})
-    .optional(),
-  managerPhoneNumber: z
-    .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
-    .min(10, { message: 'O campo Telefone do Responsável deve ter pelo menos 10 caracteres.' })
-    .optional(),
-  managerEmail: z
-    .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
-    .email({ message: 'O campo E-mail do Responsável deve ser um e-mail válido.' })
-    .optional(),
-  financePhoneNumber: z
-    .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
-    .min(10, { message: 'O campo Telefone do Financeiro deve ter pelo menos 10 caracteres.' })
-    .optional(),
-  lumpSum: z.coerce
-    .number({ required_error: 'O campo Valor Fixo é obrigatório.' })
-    .gte(0, { message: 'O campo Valor Fixo deve ser maior ou igual a 0.' })
-    .optional(),
-  unitValue: z.coerce
-    .number({ required_error: 'O campo Valor Unitário é obrigatório.' })
-    .gte(0, { message: 'O campo Valor Unitário deve ser maior ou igual a 0.' })
-    .optional(),
-  contractUrl: z
-    .string({ required_error: 'O campo URL do Contrato é obrigatório.' })
-    .url({ message: 'O campo URL do Contrato deve ser uma URL válida.' })
-    .optional()
-})
-
-type UpdateClientFormSchema = z.infer<typeof updateClientFormSchema>
-
-const UPDATE_CLIENT_FORM_DEFAULT_VALUES = {
-  corporateName: '',
-  fantasyName: '',
-  segment: '',
-  address: '',
-  state: '',
-  city: '',
-  managerName: '',
-  managerPhoneNumber: '',
-  managerEmail: '',
-  financePhoneNumber: '',
-  lumpSum: 0,
-  unitValue: 0,
-  contractUrl: ''
-}
+import { SELECT_DEFAULT_VALUE } from '@/lib/constants'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function ClientDetailsPage() {
-  const [clientDetailed, setClientDetailed] = useState<IClientDetailed | null>(null)
-  const [fileSelected, setFileSelected] = useState<File | null>(null)
+  // --------------------------- PAGE SETUP ---------------------------
+  interface ICity {
+    id: number
+    name: string
+  }
+
+  interface IState {
+    id: number
+    name: string
+  }
+  interface IAddress {
+    id: number;
+    cep: string;
+    street: string;
+    number: string;
+    complement: string;
+    neighborhood: string;
+    city: ICity;
+    state: IState;
+  }
+
+  interface IStatus {
+    id: number;
+    translation: string;
+  }
+
+  interface IClientFromAPI {
+    id: string
+    cnpj: string
+    corporateName: string
+    fantasyName: string
+    segment: string
+    managerName: string
+    managerPhoneNumber: string
+    managerEmail: string
+    financePhoneNumber: string
+    lumpSumInCents: number
+    unitValueInCents: number
+    contractUrl: string
+    availableBalanceInCents: number
+    address: IAddress,
+    status: IStatus,
+    createdAt: string
+    updatedAt: string
+  }
+
+  const [client, setClient] = useState<IClientFromAPI | null>(null)
+  const [doesPartnerHaveAddress, setDoesPartnerHaveAddress] = useState<boolean>(false)
+
   const params = useParams()
   const { push } = useRouter()
   const { toast } = useToast()
 
-  const form = useForm<UpdateClientFormSchema>({
-    mode: 'onBlur',
-    defaultValues: UPDATE_CLIENT_FORM_DEFAULT_VALUES,
-    resolver: zodResolver(updateClientFormSchema)
-  })
-
-  const formatClientDetailed = (client: CLientDetailedFromAPI) => ({
-    ...client,
-    cnpj: applyCnpjMask(client.cnpj),
-    corporateName: captalize(client.corporateName),
-    fantasyName: captalize(client.fantasyName),
-    segment: captalize(client.segment),
-    address: captalize(client.address),
-    state: client.state.toLocaleUpperCase(),
-    city: captalize(client.city),
-    managerName: captalize(client.managerName),
-    managerPhoneNumber: applyPhoneNumberMask(client.managerPhoneNumber),
-    financePhoneNumber: applyPhoneNumberMask(client.financePhoneNumber),
-    lumpSum: client.lumpSum === 0 ? '-' : formatCurrency(client.lumpSum),
-    unitValue: client.unitValue === 0 ? '-' : formatCurrency(client.unitValue),
-    totalSavings: formatCurrency(client.totalSavings),
-    status: STATUS[client.statusId],
-    createdAt: formatDateTime(client.createdAt)
-  })
-
-  const fillUpdateForm = (client: CLientDetailedFromAPI) => {
-    form.setValue('fantasyName', client.fantasyName)
-    form.setValue('corporateName', client.corporateName)
-    form.setValue('segment', client.segment)
-    form.setValue('contractUrl', client.contractUrl)
-    form.setValue('lumpSum', client.lumpSum)
-    form.setValue('unitValue', client.unitValue)
-    form.setValue('managerName', client.managerName)
-    form.setValue('managerEmail', client.managerEmail)
-    form.setValue('managerPhoneNumber', client.managerPhoneNumber)
-    form.setValue('financePhoneNumber', client.financePhoneNumber)
-    form.setValue('address', client.address)
-    form.setValue('state', client.state)
-    form.setValue('city', client.city)
+  // --------------------------- FETCH CLIENT ---------------------------
+  const fillUpdateForm = (client: IClientFromAPI) => {
+    updateClientForm.setValue('cnpj', client.cnpj)
+    updateClientForm.setValue('fantasyName', client.fantasyName)
+    updateClientForm.setValue('corporateName', client.corporateName)
+    updateClientForm.setValue('segment', client.segment)
+    updateClientForm.setValue('managerName', client.managerName)
+    updateClientForm.setValue('managerPhoneNumber', client.managerPhoneNumber)
+    updateClientForm.setValue('managerEmail', client.managerEmail)
+    updateClientForm.setValue('financePhoneNumber', client.financePhoneNumber)
+    updateClientForm.setValue('lumpSumInCents', (client.lumpSumInCents / 100).toFixed(2))
+    updateClientForm.setValue('unitValueInCents', (client.unitValueInCents / 100).toFixed(2))
+    updateClientForm.setValue('contractUrl', client.contractUrl)
+    if (client.address === null) {
+      updateClientForm.setValue('address', null)
+    } else {
+      updateClientForm.setValue('address.cep', client?.address?.cep ?? '')
+      updateClientForm.setValue('address.street', client?.address?.street ?? '')
+      updateClientForm.setValue('address.number', client?.address?.number ?? '')
+      updateClientForm.setValue('address.complement', client?.address?.complement ?? '')
+      updateClientForm.setValue('address.neighborhood', client?.address?.neighborhood ?? '')
+      updateClientForm.setValue('address.cityId', client?.address?.city?.id ? client.address.city.id.toString() : SELECT_DEFAULT_VALUE)
+      updateClientForm.setValue('address.stateId', client?.address?.state?.id ? client.address.state.id.toString() : SELECT_DEFAULT_VALUE)
+    }
   }
 
   const fetchClient = async (id: string) => {
-    const response = await sendRequest<{ client: CLientDetailedFromAPI }>({
+    const response = await sendRequest<{ client: IClientFromAPI }>({
       endpoint: `/client/${id}`,
       method: 'GET',
     })
@@ -192,30 +142,161 @@ export default function ClientDetailsPage() {
         variant: 'destructive'
       })
 
-      setClientDetailed(null)
+      setClient(null)
 
       return
     }
 
     fillUpdateForm(response.data.client)
 
-    const formattedClient = formatClientDetailed(response.data.client)
-
-    setClientDetailed(formattedClient)
+    setDoesPartnerHaveAddress(response.data.client.address !== null)
+    setClient(response.data.client)
   }
 
-  const formatUpdatedClientData = (clientData: UpdateClientFormSchema): UpdateClientFormSchema => ({
-    ...clientData,
-    managerPhoneNumber: clientData.managerPhoneNumber && clientData.managerPhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
-    financePhoneNumber: clientData.financePhoneNumber && clientData.financePhoneNumber
-      .replace('(', '').replace(')', '').replace('-', '').replace(' ', '').replaceAll('_', ''),
+  // --------------------------- UPDATE CLIENT ---------------------------
+  type IClientToBeUpdated = Partial<Omit<IClientFromAPI, 'id' | 'createdAt' | 'updatedAt' | 'address' | 'status' | 'lumpSum' | 'unitValue' | 'availableBalanceInCents'> & { lumpSum: string, unitValue: string, address: Omit<IAddress, 'id' | 'state' | 'city'> & { cityId?: number } & { stateId?: number } | null }>
+
+  const updateClientFormSchema = z.object({
+    cnpj: z
+      .string({ required_error: 'O campo CNPJ é obrigatório.' })
+      .length(18, { message: 'O campo CNPJ deve ter 18 caracteres.' })
+      .optional(),
+    corporateName: z
+      .string({ required_error: 'O campo Razão Social é obrigatório.' })
+      .optional(),
+    fantasyName: z
+      .string({ required_error: 'O campo Nome Fantasia é obrigatório.' })
+      .optional(),
+    segment: z
+      .string({ required_error: 'O campo Segmento é obrigatório.' })
+      .optional(),
+    managerName: z
+      .string({required_error: 'O campo Nome do Responsável é obrigatório.'})
+      .min(3, {message: 'O campo Nome do Responsável deve ter pelo menos 3 caracteres.'})
+      .optional(),
+    managerPhoneNumber: z
+      .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
+      .min(14, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
+      .max(15, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
+      .optional(),
+    managerEmail: z
+      .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
+      .email({ message: 'O campo E-mail do Responsável deve ser um e-mail válido.' })
+      .optional(),
+    financePhoneNumber: z
+      .string({ required_error: 'O campo Telefone do Financeiro é obrigatório.' })
+      .min(14, { message: 'O campo Telefone do Financeiro deve ter 10 ou 11 caracteres.' })
+      .max(15, { message: 'O campo Telefone do Financeiro deve ter 10 ou 11 caracteres.' })
+      .optional(),
+    lumpSumInCents: z
+      .string({ required_error: 'O campo Valor do Boleto é obrigatório.' })
+      .optional(),
+    unitValueInCents: z
+      .string({ required_error: 'O campo Valor Unitário é obrigatório.' })
+      .optional(),
+    contractUrl: z
+      .string({ required_error: 'O campo URL do Contrato é obrigatório.' })
+      .optional(),
+    address: z.object({
+      cep: z
+        .string({ required_error: 'O campo CEP é obrigatório.' })
+        .length(8, { message: 'O campo CEP deve ter 8 caracteres.' })
+        .optional(),
+      street: z
+        .string({ required_error: 'O campo Rua é obrigatório.' })
+        .min(3, { message: 'O campo Rua deve ter pelo menos 3 caracteres.' })
+        .optional(),
+      number: z
+        .string({ required_error: 'O campo Número é obrigatório.' })
+        .optional(),
+      complement: z
+        .string({ required_error: 'O campo Complemento é obrigatório.' })
+        .optional(),
+      neighborhood: z
+        .string({ required_error: 'O campo Bairro é obrigatório.' })
+        .optional(),
+      cityId: z
+        .string({required_error: 'O campo Cidade é obrigatório.' })
+        .min(1, { message: 'O campo Cidade é obrigatório.' })
+        .optional(),
+      stateId: z
+        .string({required_error: 'O campo Estado é obrigatório.' })
+        .min(1, { message: 'O campo Estado é obrigatório.' })
+        .optional()
+      })
+      .nullable()
+      .optional()
   })
+
+  type UpdateClientFormSchema = z.infer<typeof updateClientFormSchema>
+
+  const UPDATE_CLIENT_FORM_DEFAULT_VALUES = {
+    cnpj: '',
+    corporateName: '',
+    fantasyName: '',
+    segment: '',
+    managerName: '',
+    managerPhoneNumber: '',
+    managerEmail: '',
+    financePhoneNumber: '',
+    lumpSum: '',
+    unitValue: '',
+    contractUrl: '',
+    address: {
+      cep: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      cityId: SELECT_DEFAULT_VALUE,
+      stateId: SELECT_DEFAULT_VALUE
+    }
+  }
+
+  const updateClientForm = useForm<UpdateClientFormSchema>({
+    mode: 'onBlur',
+    defaultValues: UPDATE_CLIENT_FORM_DEFAULT_VALUES,
+    resolver: zodResolver(updateClientFormSchema)
+  })
+
+  const formatUpdatedClientData = (updateClientData: UpdateClientFormSchema): IClientToBeUpdated => {
+    let stateId = updateClientData.address?.stateId
+    let cityId = updateClientData.address?.cityId
+
+    if (
+      (stateId === SELECT_DEFAULT_VALUE) ||
+      (stateId === '') ||
+      (stateId === null)
+    ) stateId = undefined
+    if (
+      (cityId === SELECT_DEFAULT_VALUE) ||
+      (cityId === '') ||
+      (cityId === null)
+    ) cityId = undefined
+
+    return {
+      ...updateClientData,
+      cnpj: removeCnpjMask(updateClientData.cnpj ?? ''),
+      managerPhoneNumber: leaveOnlyDigits(updateClientData.managerPhoneNumber ?? ''),
+      financePhoneNumber: leaveOnlyDigits(updateClientData.financePhoneNumber ?? ''),
+      unitValueInCents: transformCurrencyFromBRLStringToCents(updateClientData.unitValueInCents ?? ''),
+      lumpSumInCents: transformCurrencyFromBRLStringToCents(updateClientData.lumpSumInCents ?? ''),
+      address: {
+        cep: updateClientData.address?.cep ?? '',
+        street: updateClientData.address?.street ?? '',
+        number: updateClientData.address?.number ?? '',
+        complement: updateClientData.address?.complement ?? '',
+        neighborhood: updateClientData.address?.neighborhood ?? '',
+        cityId: cityId !== undefined ? parseInt(cityId): cityId,
+        stateId: stateId !== undefined ? parseInt(stateId): stateId
+      }
+    }
+  }
 
   const updateClient = async (client: UpdateClientFormSchema) => {
     const formattedClient = formatUpdatedClientData(client)
 
-    const response = await sendRequest<{ client: CLientDetailedFromAPI }>({
+    const response = await sendRequest<{ clientId: string }>({
       endpoint: `/client/${params.id}`,
       method: 'PATCH',
       data: formattedClient,
@@ -230,77 +311,16 @@ export default function ClientDetailsPage() {
       return
     }
 
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
     fetchClient(params.id as string)
   }
 
-  const activateClient = async (id: string) => {
-    const response = await sendRequest({
-      endpoint: `/client/${id}/activate`,
-      method: 'PATCH',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-
-    fetchClient(id)
-  }
-
-  const inactivateClient = async (id: string) => {
-    const response = await sendRequest({
-      endpoint: `/client/${id}/inactivate`,
-      method: 'PATCH',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-
-    fetchClient(id)
-  }
-
-  const deleteClient = async (id: string) => {
-    const response = await sendRequest({
-      endpoint: `/client/${id}/delete`,
-      method: 'PATCH',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-
-    fetchClient(id)
-  }
+  // --------------------------- CREATE MANY MEMBERS ---------------------------
+  const [fileSelected, setFileSelected] = useState<File | null>(null)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -345,22 +365,146 @@ export default function ClientDetailsPage() {
     })
   }
 
+  // --------------------------- ACTIVATE CLIENT ---------------------------
+  const activateClient = async (id: string) => {
+    const response = await sendRequest({
+      endpoint: `/client/${id}/activate`,
+      method: 'PATCH',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchClient(id)
+  }
+
+  // --------------------------- INACTIVATE CLIENT ---------------------------
+  const inactivateClient = async (id: string) => {
+    const response = await sendRequest({
+      endpoint: `/client/${id}/inactivate`,
+      method: 'PATCH',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchClient(id)
+  }
+
+  // --------------------------- DELETE CLIENT ---------------------------
+  const deleteClient = async (id: string) => {
+    const response = await sendRequest({
+      endpoint: `/client/${id}/delete`,
+      method: 'PATCH',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: "success"
+    })
+
+    fetchClient(id)
+  }
+
+  // --------------------------- FETCH CITIES ---------------------------
+  const selectedStateId = updateClientForm.watch('address.stateId')
+
+  const [cities, setCities] = useState<ICity[]>([])
+
+  const formatCity = (city: ICity): ICity => ({
+    ...city,
+    name: captalize(city.name),
+  })
+
+  const fetchCities = async (stateId: string) => {
+    const response = await sendRequest<
+      { cities: ICity[] }
+    >({
+      endpoint: `/city/?state-id=${stateId}`,
+      method: 'GET',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      setCities([])
+
+      return
+    }
+
+    const formattedCities = response.data.cities.map((city) => formatCity(city))
+
+    setCities(formattedCities)
+  }
+
+  // --------------------------- USE EFFECT ---------------------------
+  // Dispara envio do arquivo CSV para criação de associados
   useEffect(() => {
     if (fileSelected) {
       sendCSVToCreateMembers(fileSelected)
     }
   }, [fileSelected])
 
+  // Busca dados do cliente ao carregar a página
   useEffect(() => {
     if (params.id) fetchClient(params.id as string)
   } , [params.id])
 
+  // Carrega lista de cidades quando um estado é selecionado
+  // e limpa cidade quando um estado diferente do atual é selecionado
+  useEffect(() => {
+    if (typeof selectedStateId === 'string' && selectedStateId !== SELECT_DEFAULT_VALUE) {
+      fetchCities(selectedStateId)
+    }
+
+    if (selectedStateId !== client?.address?.state.id.toString()) {
+      updateClientForm.setValue('address.cityId', SELECT_DEFAULT_VALUE)
+    }
+  }, [selectedStateId])
+
+  // --------------------------- RETURN ---------------------------
   return (
     <DashboardLayout
-      // secondaryText={`Economia Total: ${clientDetailed?.totalSavings || ''}`}
-      title={`${clientDetailed?.fantasyName || ''}`}
+      title={`${client?.fantasyName || ''}`}
     >
+      {/* Header Buttons */}
       <div className="flex justify-between w-full">
+
+        {/* Create Members */}
         <div className="flex gap-4">
           <Label
             htmlFor="file-input"
@@ -370,7 +514,7 @@ export default function ClientDetailsPage() {
           </Label>
           <Input
             accept=".csv"
-            disabled={clientDetailed?.status !== STATUS[1]}
+            disabled={client?.status.id !== STATUS.Ativo}
             className="hidden"
             id="file-input"
             onChange={handleFileChange}
@@ -379,7 +523,7 @@ export default function ClientDetailsPage() {
             placeholder='Cadastrar Associados em Lote'
           />
           <Button
-            disabled={clientDetailed?.status !== STATUS[1]}
+            disabled={client?.status.id !== STATUS.Ativo}
             onClick={() => push(`/painel/clientes/${params.id}/cadastrar-associado`)}
             variant="secondary"
           >
@@ -387,9 +531,12 @@ export default function ClientDetailsPage() {
           </Button>
         </div>
 
+        {/* Client Actions */}
         <div className="flex gap-4">
+
+          {/* Inactivate Client */}
           {
-            clientDetailed?.status === STATUS[1] && (
+            client?.status.id === STATUS.Ativo && (
               <AlertDialog>
                 <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
                 <AlertDialogContent>
@@ -404,7 +551,7 @@ export default function ClientDetailsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button onClick={() => inactivateClient(clientDetailed.id)}>
+                    <Button onClick={() => inactivateClient(client.id)}>
                       Inativar
                     </Button>
                   </AlertDialogFooter>
@@ -412,8 +559,10 @@ export default function ClientDetailsPage() {
               </AlertDialog>
             )
           }
+
+          {/* Activate Client */}
           {
-            clientDetailed?.status === STATUS[2] && (
+            client?.status.id === STATUS.Inativo && (
               <AlertDialog>
                 <AlertDialogTrigger className='uppercase px-8 h-9 rounded-md text-sm font-medium border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Ativar</AlertDialogTrigger>
                 <AlertDialogContent>
@@ -428,7 +577,7 @@ export default function ClientDetailsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button onClick={() => activateClient(clientDetailed.id)}>
+                    <Button onClick={() => activateClient(client.id)}>
                       Ativar
                     </Button>
                   </AlertDialogFooter>
@@ -436,106 +585,154 @@ export default function ClientDetailsPage() {
               </AlertDialog>
             )
           }
+
+          {/* Update Client */}
           {
-            clientDetailed
+            client
             && (
               <AlertDialog>
                 <AlertDialogTrigger title='Editar' className='rounded-md w-9 h-9 bg-primary text-white flex flex-col justify-center'>
                   <Pencil  className='mx-auto'/>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className='max-h-screen overflow-y-auto max-w-[80%]'>
                   <AlertDialogTitle>Editar Cliente</AlertDialogTitle>
-                  <Form { ...form }>
+                  <Form { ...updateClientForm }>
                     <form
                       className='flex flex-col gap-4'
-                      onSubmit={form.handleSubmit((data) => updateClient(data))}
+                      onSubmit={updateClientForm.handleSubmit((data) => updateClient(data))}
                     >
                       <DetailsRow>
                         <InputContainer size="w-1/2">
                           <Label htmlFor="fantasyName">Nome Fantasia</Label>
-                          <Input className="bg-white" { ...form.register("fantasyName") } />
+                          <Input className="bg-white" { ...updateClientForm.register("fantasyName") } />
                           {
-                            form.formState.errors.fantasyName
-                              && <span className="text-red-500 text-xs">{form.formState.errors.fantasyName.message}</span>
+                            updateClientForm.formState.errors.fantasyName
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.fantasyName.message}</span>
                           }
                         </InputContainer>
                         <InputContainer size="w-1/2">
                           <Label htmlFor="corporateName">Razão Social</Label>
-                          <Input className="bg-white" { ...form.register("corporateName") } />
+                          <Input className="bg-white" { ...updateClientForm.register("corporateName") } />
                           {
-                            form.formState.errors.corporateName
-                              && <span className="text-red-500 text-xs">{form.formState.errors.corporateName.message}</span>
+                            updateClientForm.formState.errors.corporateName
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.corporateName.message}</span>
                           }
                         </InputContainer>
                       </DetailsRow>
 
                       <DetailsRow>
                         <InputContainer size="w-1/2">
-                          <Label htmlFor="segment">Segmento</Label>
-                          <Input className="bg-white" { ...form.register("segment") } />
+                          <Label htmlFor="cnpj">CNPJ</Label>
+                          <InputMask
+                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            mask="99.999.999/9999-99"
+                            { ...updateClientForm.register("cnpj",) }
+                          />
                           {
-                            form.formState.errors.segment
-                              && <span className="text-red-500 text-xs">{form.formState.errors.segment.message}</span>
+                            updateClientForm.formState.errors.cnpj
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.cnpj.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/2">
+                          <Label htmlFor="segment">Segmento</Label>
+                          <FormField
+                            control={updateClientForm.control}
+                            name="segment"
+                            render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="Proteção Veicular">Proteção Veicular</SelectItem>
+                                    <SelectItem value="Telecom">Telecom</SelectItem>
+                                    <SelectItem value="Plano Funerário">Plano Funerário</SelectItem>
+                                    <SelectItem value="RH">RH</SelectItem>
+                                    <SelectItem value="Sindicato">Sindicato</SelectItem>
+                                    <SelectItem value="Associação">Associação</SelectItem>
+                                    <SelectItem value="Clube de benefícios">Clube de benefícios</SelectItem>
+                                    <SelectItem value="Outros">Outros</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                          {
+                            updateClientForm.formState.errors.segment
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.segment.message}</span>
+                          }
+                        </InputContainer>
+                      </DetailsRow>
+
+                      <DetailsRow>
+                        <InputContainer size="w-1/4">
+                          <Label htmlFor="lumpSumInCents">Valor do Boleto</Label>
+                          <Controller
+                            name="lumpSumInCents"
+                            control={updateClientForm.control}
+                            render={({ field }) => (
+                              <Input
+                                className="bg-white"
+                                value={field.value}
+                                onChange={(e) => field.onChange(formatCurrency(e.target.value))}
+                                placeholder="00,00"
+                              />
+                            )}
+                          />
+                          {
+                            updateClientForm.formState.errors.lumpSumInCents
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.lumpSumInCents.message}</span>
+                          }
+                        </InputContainer>
+                        <InputContainer size="w-1/4">
+                          <Label htmlFor="unitValueInCents">Valor Unitário</Label>
+                          <Controller
+                            name="unitValueInCents"
+                            control={updateClientForm.control}
+                            render={({ field }) => (
+                              <Input
+                                className="bg-white"
+                                value={field.value}
+                                onChange={(e) => field.onChange(formatCurrency(e.target.value))}
+                                placeholder="00,00"
+                              />
+                            )}
+                          />
+                          {
+                            updateClientForm.formState.errors.unitValueInCents
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.unitValueInCents.message}</span>
                           }
                         </InputContainer>
                         <InputContainer size="w-1/2">
                           <Label htmlFor="contractUrl">URL do Contrato</Label>
-                          <Input className="bg-white" { ...form.register("contractUrl") } />
+                          <Input className="bg-white" { ...updateClientForm.register("contractUrl") } />
                           {
-                            form.formState.errors.contractUrl
-                              && <span className="text-red-500 text-xs">{form.formState.errors.contractUrl.message}</span>
+                            updateClientForm.formState.errors.contractUrl
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.contractUrl.message}</span>
                           }
                         </InputContainer>
                       </DetailsRow>
 
-                      <DetailsRow>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="lumpSum">Valor do Boleto</Label>
-                          <CurrencyInput
-                            { ...form.register("lumpSum") }
-                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            allowNegativeValue={false}
-                            fixedDecimalLength={2}
-                            disableGroupSeparators={true}
-                            placeholder="00.00"
-                          />
-                          {
-                            form.formState.errors.lumpSum
-                              && <span className="text-red-500 text-xs">{form.formState.errors.lumpSum.message}</span>
-                          }
-                        </InputContainer>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="unitValue">Valor Unitário</Label>
-                          <CurrencyInput
-                            { ...form.register("unitValue") }
-                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            allowNegativeValue={false}
-                            fixedDecimalLength={2}
-                            disableGroupSeparators={true}
-                            placeholder="00.00"
-                          />
-                          {
-                            form.formState.errors.unitValue
-                              && <span className="text-red-500 text-xs">{form.formState.errors.unitValue.message}</span>
-                          }
-                        </InputContainer>
-                      </DetailsRow>
+                      <Separator />
 
                       <DetailsRow>
                         <InputContainer size="w-1/2">
                           <Label htmlFor="managerName">Nome do Responsável</Label>
-                          <Input className="bg-white" { ...form.register("managerName") } />
+                          <Input className="bg-white" { ...updateClientForm.register("managerName") } />
                           {
-                            form.formState.errors.managerName
-                              && <span className="text-red-500 text-xs">{form.formState.errors.managerName.message}</span>
+                            updateClientForm.formState.errors.managerName
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.managerName.message}</span>
                           }
                         </InputContainer>
                         <InputContainer size="w-1/2">
                           <Label htmlFor="managerEmail">E-mail do Responsável</Label>
-                          <Input className="bg-white" { ...form.register("managerEmail") } />
+                          <Input className="bg-white" { ...updateClientForm.register("managerEmail") } />
                           {
-                            form.formState.errors.managerEmail
-                              && <span className="text-red-500 text-xs">{form.formState.errors.managerEmail.message}</span>
+                            updateClientForm.formState.errors.managerEmail
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.managerEmail.message}</span>
                           }
                         </InputContainer>
                       </DetailsRow>
@@ -546,11 +743,11 @@ export default function ClientDetailsPage() {
                           <InputMask
                             className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                             mask="(99) 999999999"
-                            { ...form.register("managerPhoneNumber",) }
+                            { ...updateClientForm.register("managerPhoneNumber",) }
                           />
                           {
-                            form.formState.errors.managerPhoneNumber
-                              && <span className="text-red-500 text-xs">{form.formState.errors.managerPhoneNumber.message}</span>
+                            updateClientForm.formState.errors.managerPhoneNumber
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.managerPhoneNumber.message}</span>
                           }
                         </InputContainer>
                         <InputContainer size="w-1/2">
@@ -558,51 +755,167 @@ export default function ClientDetailsPage() {
                           <InputMask
                             className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                             mask="(99) 99999-9999"
-                            { ...form.register("financePhoneNumber",) }
+                            { ...updateClientForm.register("financePhoneNumber",) }
                           />
                           {
-                            form.formState.errors.financePhoneNumber
-                              && <span className="text-red-500 text-xs">{form.formState.errors.financePhoneNumber.message}</span>
+                            updateClientForm.formState.errors.financePhoneNumber
+                              && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.financePhoneNumber.message}</span>
                           }
                         </InputContainer>
                       </DetailsRow>
 
-                      <DetailsRow>
-                        <InputContainer size="w-full">
-                          <Label htmlFor="address">Endereço</Label>
-                          <Input className="bg-white" { ...form.register("address") } />
-                          {
-                            form.formState.errors.address
-                              && <span className="text-red-500 text-xs">{form.formState.errors.address.message}</span>
-                          }
-                        </InputContainer>
-                      </DetailsRow>
+                      <Separator />
 
                       <DetailsRow>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="city">Cidade</Label>
-                          <Input className="bg-white" { ...form.register("city") } />
-                          {
-                            form.formState.errors.city
-                              && <span className="text-red-500 text-xs">{form.formState.errors.city.message}</span>
-                          }
-                        </InputContainer>
-                        <InputContainer size="w-1/2">
-                          <Label htmlFor="state">Estado</Label>
-                          <InputMask
-                            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            mask="aa"
-                            { ...form.register("state",) }
+                        <InputContainer size="w-1/5">
+                          <Label htmlFor="address">Endereço cadastrado</Label>
+                          <FormField
+                            name="address"
+                            render={() => (
+                              <FormItem>
+                                <Select
+                                  onValueChange={(value) => setDoesPartnerHaveAddress(value === 'true')}
+                                  defaultValue={doesPartnerHaveAddress.toString()}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger className="bg-white">
+                                      <SelectValue placeholder="" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="true">Sim</SelectItem>
+                                    <SelectItem value="false">Não</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
                           />
-                          {
-                            form.formState.errors.state
-                              && <span className="text-red-500 text-xs">{form.formState.errors.state.message}</span>
-                          }
                         </InputContainer>
+                        {
+                          doesPartnerHaveAddress && (
+                            <InputContainer size="w-1/5">
+                              <Label htmlFor="address.cep">CEP</Label>
+                              <Input className="bg-white" { ...updateClientForm.register("address.cep") } />
+                              {
+                                updateClientForm.formState.errors.address?.cep
+                                  && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.address.cep.message}</span>
+                              }
+                            </InputContainer>
+                          )
+                        }
+                        {
+                          doesPartnerHaveAddress && (
+                            <InputContainer size="w-3/5">
+                              <Label htmlFor="address.street">Rua</Label>
+                              <Input className="bg-white" { ...updateClientForm.register("address.street") } />
+                              {
+                                updateClientForm.formState.errors.address?.street
+                                  && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.address.street.message}</span>
+                              }
+                            </InputContainer>
+                          )
+                        }
                       </DetailsRow>
+
+                      {
+                        doesPartnerHaveAddress && (
+                          <DetailsRow>
+                            <InputContainer size="w-1/5">
+                              <Label htmlFor="address.number">Número</Label>
+                              <Input className="bg-white" { ...updateClientForm.register("address.number") } />
+                              {
+                                updateClientForm.formState.errors.address?.number
+                                  && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.address.number.message}</span>
+                              }
+                            </InputContainer>
+                            <InputContainer size="w-1/5">
+                              <Label htmlFor="address.complement">Complemento</Label>
+                              <Input className="bg-white" { ...updateClientForm.register("address.complement") } />
+                              {
+                                updateClientForm.formState.errors.address?.complement
+                                  && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.address.complement.message}</span>
+                              }
+                            </InputContainer>
+                            <InputContainer size="w-1/5">
+                              <Label htmlFor="address.neighborhood">Bairro</Label>
+                              <Input className="bg-white" { ...updateClientForm.register("address.neighborhood") } />
+                              {
+                                updateClientForm.formState.errors.address?.neighborhood
+                                  && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.address.neighborhood.message}</span>
+                              }
+                            </InputContainer>
+                            <InputContainer size="w-1/5">
+                              <Label htmlFor="address.stateId">Estado</Label>
+                              <FormField
+                                control={updateClientForm.control}
+                                name="address.stateId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger className="bg-white">
+                                          <SelectValue placeholder="" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                      {
+                                        Object
+                                          .entries(STATE)
+                                          .filter(([key, _value]) => isNaN(Number(key)))
+                                          .map(([key, value]) => (
+                                            <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                                          )
+                                        )
+                                      }
+                                      </SelectContent>
+                                    </Select>
+                                  </FormItem>
+                                )}
+                              />
+                              {
+                                updateClientForm.formState.errors.address?.stateId
+                                  && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.address.stateId.message}</span>
+                              }
+                            </InputContainer>
+                            <InputContainer size="w-1/5">
+                              <Label htmlFor="address.cityId">Cidade</Label>
+                              <FormField
+                                control={updateClientForm.control}
+                                name="address.cityId"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger className="bg-white">
+                                          <SelectValue placeholder="" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        {
+                                          cities.map(({ id, name }) => (
+                                            <SelectItem key={uuid()} value={id.toString()}>{name}</SelectItem>
+                                          ))
+                                        }
+                                      </SelectContent>
+                                    </Select>
+                                  </FormItem>
+                                )}
+                              />
+                              {
+                                updateClientForm.formState.errors.address?.cityId
+                                  && <span className="text-red-500 text-xs">{updateClientForm.formState.errors.address.cityId.message}</span>
+                              }
+                            </InputContainer>
+                          </DetailsRow>
+                        )
+                      }
+
                       <AlertDialogFooter>
-                        <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction type="submit" disabled={!form.formState.isValid}>
+                        <AlertDialogCancel type="button">Fechar</AlertDialogCancel>
+                        <AlertDialogCancel type="button" onClick={() => fillUpdateForm(client)}>
+                          Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction type="submit" disabled={!updateClientForm.formState.isValid}>
                           Confirmar
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -612,9 +925,11 @@ export default function ClientDetailsPage() {
               </AlertDialog>
             )
           }
+
+          {/* Delete Client */}
           {
-            clientDetailed
-            && [STATUS[1], STATUS[2]].includes(clientDetailed.status as string)
+            client
+            && [STATUS.Ativo, STATUS.Inativo].includes(client.status.id)
             && (
               <AlertDialog>
                 <AlertDialogTrigger title='Excluir' className='rounded-md w-9 h-9 bg-destructive text-white flex flex-col justify-center'>
@@ -632,7 +947,7 @@ export default function ClientDetailsPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button variant="destructive" onClick={() => deleteClient(clientDetailed.id)}>
+                    <Button variant="destructive" onClick={() => deleteClient(client.id)}>
                       Excluir
                     </Button>
                   </AlertDialogFooter>
@@ -643,31 +958,33 @@ export default function ClientDetailsPage() {
         </div>
       </div>
 
+      {/* Client Details */}
       <div className='bg-white border rounded-md p-4 flex flex-col gap-4'>
         <DetailsRow>
-          <DetailsField label="Nome Fantasia" value={clientDetailed?.fantasyName} />
-          <DetailsField label="Razão Social" value={clientDetailed?.corporateName} />
-          <DetailsField label="CNPJ" value={clientDetailed?.cnpj} />
+          <DetailsField label="Nome Fantasia" value={client?.fantasyName ?? ''} />
+          <DetailsField label="Razão Social" value={client?.corporateName ?? ''} />
+          <DetailsField label="CNPJ" value={applyCnpjMask(client?.cnpj ?? '')} />
         </DetailsRow>
 
         <DetailsRow>
-          <DetailsField label="Segmento" value={clientDetailed?.segment} />
-          <DetailsField label="Status" value={clientDetailed?.status} />
-          <DetailsField label="Data do Cadastro" value={clientDetailed?.createdAt} />
+          <DetailsField label="Segmento" value={client?.segment ?? ''} />
+          <DetailsField label="Status" value={client?.status.translation ?? ''} />
+          <DetailsField label="Data do Cadastro" value={formatDateTime(client?.createdAt ?? '')} />
         </DetailsRow>
 
         <DetailsRow>
-          <DetailsField label="Valor do Boleto" value={clientDetailed?.lumpSum} width="min-w-52 w-full" />
-          <DetailsField label="Valor Unitário" value={clientDetailed?.unitValue} width="min-w-52 w-full" />
+          <DetailsField label="Valor do Boleto" value={transformCurrencyFromCentsToBRLString(client?.lumpSumInCents ?? 0)} width="min-w-52 w-full" />
+          <DetailsField label="Valor Unitário" value={transformCurrencyFromCentsToBRLString(client?.unitValueInCents ?? 0)} width="min-w-52 w-full" />
+          <DetailsField label="Saldo Dispoível" value={transformCurrencyFromCentsToBRLString(client?.availableBalanceInCents ?? 0)} width="min-w-52 w-full" />
           <DetailsField label="URL do Contrato">
             <Link
               className="text-primary font-semibold"
-              href={clientDetailed?.contractUrl || ''}
+              href={client?.contractUrl ?? ''}
               rel="noreferrer noopener"
               referrerPolicy="no-referrer"
               target="_blank"
             >
-              {clientDetailed?.contractUrl}
+              {client?.contractUrl ?? ''}
             </Link>
           </DetailsField>
         </DetailsRow>
@@ -675,21 +992,28 @@ export default function ClientDetailsPage() {
         <Separator />
 
         <DetailsRow>
-          <DetailsField label="Nome do Responsável" value={clientDetailed?.managerName} />
-          <DetailsField label="E-mail do Responsável" value={clientDetailed?.managerEmail} />
+          <DetailsField label="Nome do Responsável" value={captalize(client?.managerName ?? '')} />
+          <DetailsField label="E-mail do Responsável" value={client?.managerEmail ?? ''} />
         </DetailsRow>
 
         <DetailsRow>
-          <DetailsField label="Telefone do Responável" value={clientDetailed?.managerPhoneNumber} width="min-w-52 w-full" />
-          <DetailsField label="Telefone do Financeiro" value={clientDetailed?.financePhoneNumber} width="min-w-52 w-full" />
+          <DetailsField label="Telefone do Responável" value={applyPhoneNumberMask(client?.managerPhoneNumber ?? '')} width="min-w-52 w-full" />
+          <DetailsField label="Telefone do Financeiro" value={applyPhoneNumberMask(client?.financePhoneNumber ?? '')} width="min-w-52 w-full" />
         </DetailsRow>
 
         <Separator />
 
         <DetailsRow>
-          <DetailsField label="Endereço" value={clientDetailed?.address} />
-          <DetailsField label="Cidade" value={clientDetailed?.city} width="min-w-60" />
-          <DetailsField label="Estado" value={clientDetailed?.state} width="min-w-28" />
+          <DetailsField label="CEP" value={applyCepMask(client?.address?.cep ?? '')} width="w-1/5"/>
+          <DetailsField label="Rua" value={captalize(client?.address?.street ?? '')} width='w-full' />
+        </DetailsRow>
+
+        <DetailsRow>
+          <DetailsField label="Número" value={client?.address?.number ?? ''} />
+          <DetailsField label="Complemento" value={client?.address?.complement ?? ''} />
+          <DetailsField label="Bairro" value={captalize(client?.address?.neighborhood ?? '')} />
+          <DetailsField label="Cidade" value={captalize(client?.address?.city?.name ?? '')} />
+          <DetailsField label="Estado" value={captalize(client?.address?.state?.name ?? '')} />
         </DetailsRow>
       </div>
     </DashboardLayout>

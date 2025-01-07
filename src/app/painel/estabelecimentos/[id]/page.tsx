@@ -113,6 +113,33 @@ export default function PartnerDetailsPage() {
   const { toast } = useToast()
 
   // --------------------------- FETCH PARTNER ---------------------------
+  const fillUpdateForm = (partner: IPartnerFromAPI) => {
+    updatePartnerForm.setValue('cnpj', partner.cnpj ?? '')
+    updatePartnerForm.setValue('password', partner.password ?? '')
+    updatePartnerForm.setValue('corporateName', partner.corporateName ?? '')
+    updatePartnerForm.setValue('fantasyName', partner.fantasyName ?? '')
+    if (partner.address === null) {
+      updatePartnerForm.setValue('address', null)
+    } else {
+      updatePartnerForm.setValue('address.cep', partner?.address?.cep ?? '')
+      updatePartnerForm.setValue('address.street', partner?.address?.street ?? '')
+      updatePartnerForm.setValue('address.number', partner?.address?.number ?? '')
+      updatePartnerForm.setValue('address.complement', partner?.address?.complement ?? '')
+      updatePartnerForm.setValue('address.neighborhood', partner?.address?.neighborhood ?? '')
+      updatePartnerForm.setValue('address.cityId', partner?.address?.city?.id ? partner.address.city.id.toString() : SELECT_DEFAULT_VALUE)
+      updatePartnerForm.setValue('address.stateId', partner?.address?.state?.id ? partner.address.state.id.toString() : SELECT_DEFAULT_VALUE)
+    }
+    updatePartnerForm.setValue('categoryId', partner.category.id.toString() ?? SELECT_DEFAULT_VALUE)
+    updatePartnerForm.setValue('tags', partner.tags ?? '')
+    updatePartnerForm.setValue('isOnline', partner.isOnline.toString() ?? '')
+    updatePartnerForm.setValue('managerName', partner.managerName ?? '')
+    updatePartnerForm.setValue('managerPhoneNumber', partner.managerPhoneNumber ?? '')
+    updatePartnerForm.setValue('managerEmail', partner.managerEmail ?? '')
+    updatePartnerForm.setValue('businessPhoneNumber', partner.businessPhoneNumber ?? '')
+    updatePartnerForm.setValue('about', partner.about ?? '')
+    updatePartnerForm.setValue('openingHours', partner.openingHours ?? '')
+  }
+
   const fetchPartner = async (id: string) => {
     const response = await sendRequest<{ partner: IPartnerFromAPI }>({
       endpoint: `/partner/${id}`,
@@ -243,33 +270,6 @@ export default function PartnerDetailsPage() {
     defaultValues: UPDATE_PARTNER_FORM_DEFAULT_VALUES,
     resolver: zodResolver(updatePartnerFormSchema)
   })
-
-  const fillUpdateForm = (partner: IPartnerFromAPI) => {
-    updatePartnerForm.setValue('cnpj', partner.cnpj ?? '')
-    updatePartnerForm.setValue('password', partner.password ?? '')
-    updatePartnerForm.setValue('corporateName', partner.corporateName ?? '')
-    updatePartnerForm.setValue('fantasyName', partner.fantasyName ?? '')
-    if (partner.address === null) {
-      updatePartnerForm.setValue('address', null)
-    } else {
-      updatePartnerForm.setValue('address.cep', partner?.address?.cep ?? '')
-      updatePartnerForm.setValue('address.street', partner?.address?.street ?? '')
-      updatePartnerForm.setValue('address.number', partner?.address?.number ?? '')
-      updatePartnerForm.setValue('address.complement', partner?.address?.complement ?? '')
-      updatePartnerForm.setValue('address.neighborhood', partner?.address?.neighborhood ?? '')
-      updatePartnerForm.setValue('address.cityId', partner?.address?.city?.id ? partner.address.city.id.toString() : SELECT_DEFAULT_VALUE)
-      updatePartnerForm.setValue('address.stateId', partner?.address?.state?.id ? partner.address.state.id.toString() : SELECT_DEFAULT_VALUE)
-    }
-    updatePartnerForm.setValue('categoryId', partner.category.id.toString() ?? SELECT_DEFAULT_VALUE)
-    updatePartnerForm.setValue('tags', partner.tags ?? '')
-    updatePartnerForm.setValue('isOnline', partner.isOnline.toString() ?? '')
-    updatePartnerForm.setValue('managerName', partner.managerName ?? '')
-    updatePartnerForm.setValue('managerPhoneNumber', partner.managerPhoneNumber ?? '')
-    updatePartnerForm.setValue('managerEmail', partner.managerEmail ?? '')
-    updatePartnerForm.setValue('businessPhoneNumber', partner.businessPhoneNumber ?? '')
-    updatePartnerForm.setValue('about', partner.about ?? '')
-    updatePartnerForm.setValue('openingHours', partner.openingHours ?? '')
-  }
 
   const formatUpdatePartnerData = (partnerData: UpdatePartnerFormSchema): IPartnerToBeUpdated => {
     let categoryId = partnerData.categoryId
@@ -1152,7 +1152,7 @@ export default function PartnerDetailsPage() {
 
         <DetailsRow>
           <DetailsField label="CEP" value={applyCepMask(partner?.address?.cep ?? '')} width="w-1/5"/>
-          <DetailsField label="Rua" value={partner?.address?.street ?? ''} width='w-full' />
+          <DetailsField label="Rua" value={captalize(partner?.address?.street ?? '')} width='w-full' />
         </DetailsRow>
 
         <DetailsRow>
