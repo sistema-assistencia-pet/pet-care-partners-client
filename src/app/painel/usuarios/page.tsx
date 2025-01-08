@@ -4,17 +4,7 @@ import { useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { v4 as uuid } from 'uuid'
 
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import {
   applyCnpjMask,
   applyCpfMask,
@@ -204,64 +194,6 @@ export default function UsersPage() {
     setUsersCount(parseInt(response.headers[`x-total-count`]))
   }
 
-  // --------------------------- FETCH CLIENTS ---------------------------
-  interface IClient {
-    id: string
-    cnpj: string
-    fantasyName: string
-    segment: string
-    availableBalanceInCents: number
-    createdAt: string
-    city: {
-      id: number
-      name: string
-    } | null
-    state: {
-      id: number
-      name: string
-    } | null
-  }
-
-  const [clients, setClients] = useState<IClient[]>([])
-
-  const formatClient = (client: IClient): IClient => ({
-    ...client,
-    cnpj: applyCnpjMask(client.cnpj),
-    fantasyName: captalize(client.fantasyName),
-    segment: captalize(client.segment),
-    createdAt: formatDateTime(client.createdAt),
-    city: client.city ? {
-      id: client.city.id,
-      name: captalize(client.city.name)
-    } : null,
-    state: client.state ? {
-      id: client.state.id,
-      name: captalize(client.state.name)
-    } : null
-  })
-
-  const fetchClients = async () => {
-    const response = await sendRequest<{ clients: IClient[] }>({
-      endpoint: '/client',
-      method: 'GET',
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      setClients([])
-
-      return
-    }
-
-    const formattedClients = response.data.clients.map((client) => formatClient(client))
-
-    setClients(formattedClients)
-  }
-
   // --------------------------- PAGINATION ---------------------------
   const [skip, setSkip] = useState<number>(0)
   const [page, setPage] = useState<number>(1)
@@ -288,11 +220,6 @@ export default function UsersPage() {
       fetchUsers(query)
     } else fetchUsers()
   }, [skip])
-
-  // Carrega lista de clientes quando a página carrega
-  useEffect(() => {
-    fetchClients()
-  }, [])
 
   // --------------------------- RETURN ---------------------------
   return (
