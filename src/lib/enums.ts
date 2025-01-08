@@ -9,6 +9,13 @@ export enum CATEGORY {
   Calçados = 2
 }
 
+export enum ROLE {
+  MEMBER = 1,
+  MASTER = 2,
+  CLIENT_ADMIN = 3,
+  PARTNER_ADMIN = 4
+}
+
 export enum STATE {
   AC = 1,
   AL = 2,

@@ -49,27 +49,37 @@ import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 import { PAGINATION_LIMIT } from '@/lib/constants'
 
-export default function MembersPage() {
+export default function UsersPage() {
   // --------------------------- PAGE SETUP ---------------------------
   const { push } = useRouter()
   const { toast } = useToast()
-  interface IMember {
+
+  interface IStatus {
+    id: number
+    translation: string
+  }
+
+  interface IRole {
+    id: number
+    translation: string
+  }
+
+  interface IClientMinData {
+    id: string
+    fantasyName: string
+  }
+
+  interface IUser {
     id: string
     cpf: string
     name: string
-    client: {
-      id: string
-      cnpj: string
-      fantasyName: string
-    }
-    status: {
-      id: number
-      translation: string
-    }
+    client: IClientMinData | null
+    role: IRole
+    status: IStatus
     createdAt: string
   }
 
-  const columns: ColumnDef<IMember>[] = [
+  const columns: ColumnDef<IUser>[] = [
     {
       header: `CPF`,
       accessorKey: `cpf`
@@ -79,8 +89,8 @@ export default function MembersPage() {
       accessorKey: `name`
     },
     {
-      header: `CNPJ do Cliente`,
-      accessorKey: `client.cnpj`
+      header: `Nível de acesso`,
+      accessorKey: `role.translation`
     },
     {
       header: `Nome Fantasia do Cliente`,
@@ -100,7 +110,7 @@ export default function MembersPage() {
       cell: ({ row: { original: { id } } }) => (
         <Button
           className=''
-          onClick={() => push(`/painel/associados/${id}`)}
+          onClick={() => push(`/painel/usuarios/${id}`)}
           size="icon"
           title="Visualizar Detalhes"
           variant="outline"
@@ -139,7 +149,7 @@ export default function MembersPage() {
     if (statusId) query.append('status-id', statusId)
 
     setQuery(query)
-    await fetchMembers(query)
+    await fetchUsers(query)
   }
 
   const resetFilter = () => {
@@ -148,32 +158,31 @@ export default function MembersPage() {
     setSkip(0)
     setPage(1)
 
-    fetchMembers()
+    fetchUsers()
   }
 
-  // --------------------------- FETCH MEMBERS ---------------------------
-  const [members, setMembers] = useState<IMember[]>([])
-  const [membersCount, setMembersCount] = useState<number>(0)
+  // --------------------------- FETCH USERS ---------------------------
+  const [users, setUsers] = useState<IUser[]>([])
+  const [usersCount, setUsersCount] = useState<number>(0)
 
-  const formatMember = (member: IMember): IMember => ({
-    ...member,
-    cpf: applyCpfMask(member.cpf),
-    name: captalize(member.name),
+  const formatUser = (user: IUser): IUser => ({
+    ...user,
+    cpf: applyCpfMask(user.cpf),
+    name: captalize(user.name),
     client: {
-      id: member.client.id,
-      cnpj: applyCnpjMask(member.client.cnpj),
-      fantasyName: captalize(member.client.fantasyName)
+      id: user.client?.id ?? '',
+      fantasyName: captalize(user.client?.fantasyName ?? '-')
     },
     status: {
-      id: member.status.id,
-      translation: captalize(member.status.translation)
+      id: user.status.id,
+      translation: captalize(user.status.translation)
     },
-    createdAt: formatDateTime(member.createdAt)
+    createdAt: formatDateTime(user.createdAt)
   })
 
-  const fetchMembers = async (query?: URLSearchParams) => {
-    const response = await sendRequest<{ members: IMember[] }>({
-      endpoint: `/member?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
+  const fetchUsers = async (query?: URLSearchParams) => {
+    const response = await sendRequest<{ users: IUser[] }>({
+      endpoint: `/user?take=${PAGINATION_LIMIT}&skip=${skip}${query ? `&${query.toString()}` : '&status-id=1'}`,
       method: 'GET',
     })
 
@@ -183,16 +192,16 @@ export default function MembersPage() {
         variant: 'destructive'
       })
 
-      setMembers([])
-      setMembersCount(0)
+      setUsers([])
+      setUsersCount(0)
 
       return
     }
 
-    const formattedMembers = response.data.members.map((member) => (formatMember(member)))
+    const formattedUsers = response.data.users.map((user) => (formatUser(user)))
 
-    setMembers(formattedMembers)
-    setMembersCount(parseInt(response.headers[`x-total-count`]))
+    setUsers(formattedUsers)
+    setUsersCount(parseInt(response.headers[`x-total-count`]))
   }
 
   // --------------------------- FETCH CLIENTS ---------------------------
@@ -253,53 +262,6 @@ export default function MembersPage() {
     setClients(formattedClients)
   }
 
-  // --------------------------- CREATE MANY MEMBERS ---------------------------
-  const [clientIdSelected, setClientIdSelected] = useState<string>('')
-  const [fileSelected, setFileSelected] = useState<File | null>(null)
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files
-
-    if (files && files.length > 0) {
-      const file = files[0]
-
-      if (file.type === "text/csv") {
-        setFileSelected(file)
-      } else {
-        toast({
-          description: "O arquivo selecionado não tem a extensão .csv",
-          variant: "destructive"
-        })
-        setFileSelected(null)
-      }
-    }
-  }
-
-  const sendCSVToCreateMembers = async (file: File) => {
-    const formData = new FormData()
-    formData.append("file", file)
-
-    const response = await sendRequest({
-      endpoint: `/member/${clientIdSelected}/create-in-bulk`,
-      method: 'POST',
-      data: formData,
-    })
-
-    if (response.error) {
-      toast({
-        description: response.message,
-        variant: 'destructive'
-      })
-
-      return
-    }
-
-    toast({
-      description: response.message,
-      variant: "success"
-    })
-  }
-
   // --------------------------- PAGINATION ---------------------------
   const [skip, setSkip] = useState<number>(0)
   const [page, setPage] = useState<number>(1)
@@ -320,18 +282,11 @@ export default function MembersPage() {
   }
 
   // --------------------------- USE EFFECT ---------------------------
-  // Dispara a criação de associados em lote quando um arquivo é selecionado
-  useEffect(() => {
-    if (fileSelected) {
-      sendCSVToCreateMembers(fileSelected)
-    }
-  }, [fileSelected])
-
-  // Carrega lista de associados quando a página carrega ou a paginação muda
+  // Carrega lista de usuários quando a página carrega ou a paginação muda
   useEffect(() => {
     if (query) {
-      fetchMembers(query)
-    } else fetchMembers()
+      fetchUsers(query)
+    } else fetchUsers()
   }, [skip])
 
   // Carrega lista de clientes quando a página carrega
@@ -341,71 +296,13 @@ export default function MembersPage() {
 
   // --------------------------- RETURN ---------------------------
   return (
-    <DashboardLayout title="Associados" secondaryText={`Total: ${membersCount} associados`}>
+    <DashboardLayout title="Usuários" secondaryText={`Total: ${usersCount} usuários`}>
 
-      {/* Create Members */}
-      <div className="flex justify-between w-full">
-        <div className="flex gap-4">
-          <AlertDialog>
-            <AlertDialogTrigger className='rounded-md font-medium text-sm uppercase px-8 h-9 bg-primary text-white flex flex-col justify-center'>
-              Cadastrar associado(s)
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogTitle>Escolha o cliente</AlertDialogTitle>
-              <AlertDialogDescription>
-                <form
-                  className='flex flex-col gap-4'
-                >
-                  <div className="flex flex-col space-y-1.5 bg-white">
-                      <select
-                        className='h-8 px-4 border rounded-md'
-                        value={clientIdSelected}
-                        onChange={({ target }) => setClientIdSelected(target.value)}
-                      >
-                        <option value="" />
-                        {
-                          clients.map(({ id, fantasyName }) => (
-                            <option key={uuid()} value={id}>{fantasyName}</option>
-                          ))
-                        }
-                      </select>
-                  </div>
-                  <AlertDialogFooter>
-                    <div className='flex flex-col gap-4 justify-end'>
-                      <AlertDialogCancel type="button">Fechar</AlertDialogCancel>
-                    </div>
-                    <div className='flex flex-col gap-4'>
-                      <Button
-                        disabled={clientIdSelected === ''}
-                        onClick={() => push(`/painel/clientes/${clientIdSelected}/cadastrar-associado`)}
-                        type="button"
-                        variant="secondary"
-                      >
-                        Cadastrar um associado
-                      </Button>
-                      <Label
-                        htmlFor="file-input"
-                        className="uppercase bg-primary text-primary-foreground shadow hover:bg-primary/90 leading-9 rounded-md px-8 cursor-pointer"
-                      >
-                        Cadastrar Associados em Lote
-                      </Label>
-                      <Input
-                        accept=".csv"
-                        disabled={clientIdSelected === ''}
-                        className="hidden"
-                        id="file-input"
-                        onChange={handleFileChange}
-                        type="file"
-                        multiple={false}
-                        placeholder='Cadastrar Associados em Lote'
-                      />
-                    </div>
-                  </AlertDialogFooter>
-                </form>
-              </AlertDialogDescription>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+      {/* Create Users */}
+      <div className='flex flex-row'>
+        <Button type="button" onClick={() => push('/painel/usuarios/cadastrar-usuario')}>
+          Cadastrar usuário
+        </Button>
       </div>
 
       {/* Filter */}
@@ -421,7 +318,7 @@ export default function MembersPage() {
             <Input
               { ...filterForm.register("searchInput") }
               className='bg-white'
-              placeholder="CPF / Nome / CNPJ do Cliente / Nome do Cliente" type="text"
+              placeholder="CPF / Nome" type="text"
             />
           </div>
 
@@ -466,7 +363,7 @@ export default function MembersPage() {
       </Form>
 
       {/* Table */}
-      <DataTable columns={columns} data={members} />
+      <DataTable columns={columns} data={users} />
 
       {/* Pagination */}
       <Pagination>
@@ -493,12 +390,12 @@ export default function MembersPage() {
               size="default"
               className='cursor-default hover:bg-background'
             >
-              {`${page} de ${Math.ceil(membersCount/PAGINATION_LIMIT)}`}
+              {`${page} de ${Math.ceil(usersCount/PAGINATION_LIMIT)}`}
             </PaginationLink>
           </PaginationItem>
           <PaginationItem>
             <PaginationNext
-              disabled={membersCount <= page * PAGINATION_LIMIT}
+              disabled={usersCount <= page * PAGINATION_LIMIT}
               onClick={handleNextPagination}
               type="button"
             />

@@ -12,23 +12,19 @@ import {
   CommandList
 } from "@/components/ui/command"
 import logo from '../../public/logo-clube-rede-black-png.png'
-import { Handshake, Map, Settings2, Store, Users } from 'lucide-react'
+import { Handshake, Map, Settings2, Settings, Store, Users, CircleUserRound } from 'lucide-react'
 import UserCard from './UserCard'
 
 export default function Sidebar() {
   const pathname = usePathname()
 
   const commandListItems = [
-    {
-      group: 'Sessões',
-      items: [
-        { name: 'Associados', link: '/painel/associados', icon: <Users /> },
-        { name: 'Clientes', link: '/painel/clientes', icon: <Handshake /> },
-        { name: 'Estabelecimentos', link: '/painel/estabelecimentos', icon: <Store /> },
-        { name: 'Categorias', link: '/painel/categorias', icon: <Settings2 /> },
-        { name: 'Cidades', link: '/painel/cidades', icon: <Map /> },
-      ]
-    }
+    { name: 'Associados', link: '/painel/associados', icon: <Users /> },
+    { name: 'Clientes', link: '/painel/clientes', icon: <Handshake /> },
+    { name: 'Estabelecimentos', link: '/painel/estabelecimentos', icon: <Store /> },
+    { name: 'Categorias', link: '/painel/categorias', icon: <Settings2 /> },
+    { name: 'Cidades', link: '/painel/cidades', icon: <Map /> },
+    { name: 'Usuários', link: '/painel/usuarios', icon: <CircleUserRound /> }
   ]
 
   return (
@@ -37,22 +33,16 @@ export default function Sidebar() {
         <UserCard />
         <Command>
           <CommandList>
-            {
-              commandListItems.map((commandListItem) => (
-                <CommandGroup className="flex flex-col gap-4" heading={commandListItem.group} key={uuid()}>
-                  {
-                    commandListItem.items.map((commandItem) => (
-                      <Link href={commandItem.link} key={uuid()} passHref={true}>
-                        <CommandItem className={`mb-4 pl-4 gap-4 ${pathname.includes(commandItem.link) && 'bg-accent'}`}>
-                          {commandItem.icon}
-                          {commandItem.name}
-                        </CommandItem>
-                      </Link>
-                    ))
-                  }
-                </CommandGroup>
-              ))
-            }
+              {
+                commandListItems.map((commandItem) => (
+                  <Link href={commandItem.link} key={uuid()} passHref={true}>
+                    <CommandItem className={`mb-4 pl-4 gap-4 ${pathname.includes(commandItem.link) && 'bg-accent'}`}>
+                      {commandItem.icon}
+                      {commandItem.name}
+                    </CommandItem>
+                  </Link>
+                ))
+              }
           </CommandList>
         </Command>
       </nav>
