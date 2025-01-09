@@ -26,7 +26,6 @@ import {
   applyPhoneNumberMask,
   removeCnpjMask,
   leaveOnlyDigits,
-  removeCpfMask,
   applyCepMask,
   transformCurrencyFromCentsToBRLString,
   transformCurrencyFromBRLStringToCents

@@ -12,7 +12,7 @@ import {
   CommandList
 } from "@/components/ui/command"
 import logo from '../../public/logo-clube-rede-black-png.png'
-import { Handshake, Map, Settings2, Settings, Store, Users, CircleUserRound, TicketCheck } from 'lucide-react'
+import { Handshake, Map, Settings2, Store, Users, CircleUserRound, TicketCheck } from 'lucide-react'
 import UserCard from './UserCard'
 
 export default function Sidebar() {
