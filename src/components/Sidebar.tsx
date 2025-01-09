@@ -12,7 +12,7 @@ import {
   CommandList
 } from "@/components/ui/command"
 import logo from '../../public/logo-clube-rede-black-png.png'
-import { Handshake, Map, Settings2, Settings, Store, Users, CircleUserRound } from 'lucide-react'
+import { Handshake, Map, Settings2, Settings, Store, Users, CircleUserRound, TicketCheck } from 'lucide-react'
 import UserCard from './UserCard'
 
 export default function Sidebar() {
@@ -22,6 +22,7 @@ export default function Sidebar() {
     { name: 'Associados', link: '/painel/associados', icon: <Users /> },
     { name: 'Clientes', link: '/painel/clientes', icon: <Handshake /> },
     { name: 'Estabelecimentos', link: '/painel/estabelecimentos', icon: <Store /> },
+    { name: 'Vouchers', link: '/painel/vouchers', icon: <TicketCheck /> },
     { name: 'Categorias', link: '/painel/categorias', icon: <Settings2 /> },
     { name: 'Cidades', link: '/painel/cidades', icon: <Map /> },
     { name: 'Usuários', link: '/painel/usuarios', icon: <CircleUserRound /> }

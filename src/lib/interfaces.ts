@@ -22,6 +22,10 @@ export interface UserLogged {
   id: string
   name: string
   roleId: number
+  client: {
+    id: string
+    fantasyName: string
+  } | null
 }
 
 export type AccessTokenPayload = JWTPayload & UserLogged

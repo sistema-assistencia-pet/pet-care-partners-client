@@ -90,7 +90,6 @@ export default function CategoriesPage() {
       return
     }
 
-    console.log(response.data.categories)
     setCategories(response.data.categories)
     setCategoriesCount(parseInt(response.headers[`x-total-count`]))
   }
