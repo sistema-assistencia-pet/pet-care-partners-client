@@ -358,7 +358,7 @@ export default function VouchersPage() {
             <Input className='bg-white' { ...filterForm.register("searchInput") } placeholder="Nome / Categoria do Parceiro" type="text" />
           </div>
 
-          {/* Is Online */}
+          {/* Show all or filter by client */}
           <div className="flex flex-col space-y-1.5">
             <Label className='bg-transparent text-sm' htmlFor="onlyMine">Exibir</Label>
             <FormField
@@ -368,7 +368,7 @@ export default function VouchersPage() {
                 <FormItem>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="w-36 bg-white">
+                      <SelectTrigger className="w-36 bg-white" disabled={!user?.client?.id}>
                         <SelectValue placeholder="Exibir" />
                       </SelectTrigger>
                     </FormControl>
