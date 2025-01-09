@@ -671,10 +671,10 @@ export default function PartnerDetailsPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Todos os benefícios do estabelecimento também serão inativados!
+                      Todos os vouchers do estabelecimento também serão inativados!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
-                      Essa ação poderá ser desfeita.
+                      Depois disso, <strong className='text-black'>não</strong> será possível ativar apenas os vouchers que já eram ativos antes dessa ação, será necessário reinativar todos.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -700,7 +700,7 @@ export default function PartnerDetailsPage() {
                       Todos os benefícios do estabelecimento também serão ativados!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
-                      Essa ação poderá ser desfeita.
+                      Depois disso, <strong className='text-black'>não</strong> será possível inativar apenas os vouchers que já eram inativos antes dessa ação, será necessário reativar todos.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -1070,7 +1070,7 @@ export default function PartnerDetailsPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar exclusão?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Todos os benefícios do estabelecimento também serão excluídos!
+                      Todos os vouchers do estabelecimento também serão excluídos!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
                       A operação <strong className='text-black'>não</strong> poderá ser desfeita!

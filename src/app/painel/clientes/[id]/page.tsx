@@ -544,7 +544,7 @@ export default function ClientDetailsPage() {
                       Todos os associados do cliente também serão inativados!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
-                      Essa ação poderá ser desfeita.
+                      Depois disso, <strong className='text-black'>não</strong> será possível ativar apenas os associados que já eram ativos antes dessa ação, será necessário reinativar todos.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -570,7 +570,7 @@ export default function ClientDetailsPage() {
                       Todos os associados do cliente também serão ativados!
                     </AlertDialogDescription>
                     <AlertDialogDescription>
-                      Essa ação poderá ser desfeita.
+                      Depois disso, <strong className='text-black'>não</strong> será possível inativar apenas os associados que já eram inativos antes dessa ação, será necessário reativar todos.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
