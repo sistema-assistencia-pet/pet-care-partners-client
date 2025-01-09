@@ -102,16 +102,16 @@ export default function ClientsPage() {
     }
   ]
 
-  // --------------------------- FETCH PARTNERS ---------------------------
+  // --------------------------- FETCH CLIENTS ---------------------------
   const [clients, setClients] = useState<IClient[]>([])
   const [clientsCount, setClientsCount] = useState<number>(0)
 
   const formatClient = (client: IClient): IClient => ({
     ...client,
-    cnpj: applyCnpjMask(client.cnpj),
-    fantasyName: captalize(client.fantasyName),
-    segment: captalize(client.segment),
-    createdAt: formatDateTime(client.createdAt)
+    cnpj: applyCnpjMask(client.cnpj ?? ''),
+    fantasyName: captalize(client.fantasyName ?? ''),
+    segment: captalize(client.segment ?? ''),
+    createdAt: formatDateTime(client.createdAt ?? '')
   })
 
   const fetchClients = async (query?: URLSearchParams): Promise<void> => {

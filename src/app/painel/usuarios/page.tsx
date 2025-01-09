@@ -157,17 +157,17 @@ export default function UsersPage() {
 
   const formatUser = (user: IUser): IUser => ({
     ...user,
-    cpf: applyCpfMask(user.cpf),
-    name: captalize(user.name),
+    cpf: applyCpfMask(user.cpf ?? ''),
+    name: captalize(user.name ?? ''),
     client: {
       id: user.client?.id ?? '',
       fantasyName: captalize(user.client?.fantasyName ?? '-')
     },
     status: {
-      id: user.status.id,
-      translation: captalize(user.status.translation)
+      id: user.status.id ?? '',
+      translation: captalize(user.status.translation ?? '')
     },
-    createdAt: formatDateTime(user.createdAt)
+    createdAt: formatDateTime(user.createdAt ?? '')
   })
 
   const fetchUsers = async (query?: URLSearchParams) => {

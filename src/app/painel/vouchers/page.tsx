@@ -7,9 +7,7 @@ import { useRouter } from 'next/navigation'
 import { v4 as uuid } from 'uuid'
 
 import {
-  applyCnpjMask,
   captalize,
-  formatDateTime,
   removeSpecialCharacters,
   transformCurrencyFromCentsToBRLString,
 } from '@/lib/utils'

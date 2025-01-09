@@ -32,7 +32,6 @@ import {
   transformCurrencyFromBRLStringToCents
 } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import CurrencyInput from 'react-currency-input-field'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DetailsField } from '@/components/DetailsField'
 import { DetailsRow } from '@/components/DetailsRow'

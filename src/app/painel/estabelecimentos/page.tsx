@@ -168,12 +168,12 @@ export default function PartnersPage() {
 
   const formatPartner = (partner: IPartner): IPartner => ({
     ...partner,
-    cnpj: applyCnpjMask(partner.cnpj),
-    fantasyName: captalize(partner.fantasyName),
-    category: { id: partner.category.id, name: captalize(partner.category.name) },
-    city: { id: partner.city.id, name: captalize(partner.city.name) },
-    state: { id: partner.state.id, name: captalize(partner.state.name) },
-    createdAt: formatDateTime(partner.createdAt)
+    cnpj: applyCnpjMask(partner.cnpj ?? ''),
+    fantasyName: captalize(partner.fantasyName ?? ''),
+    category: { id: partner.category.id, name: captalize(partner.category.name ?? '') },
+    city: { id: partner.city.id ?? '', name: captalize(partner.city.name ?? '') },
+    state: { id: partner.state.id ?? '', name: captalize(partner.state.name ?? '') },
+    createdAt: formatDateTime(partner.createdAt ?? '')
   })
 
   const fetchPartners = async (query?: URLSearchParams) => {
@@ -246,7 +246,7 @@ export default function PartnersPage() {
 
   const formatCity = (city: ICity): ICity => ({
     ...city,
-    name: captalize(city.name),
+    name: captalize(city.name ?? ''),
   })
 
   const fetchCities = async (stateId: string) => {

@@ -369,7 +369,7 @@ export default function RegisterClient() {
               }
             </InputContainer>
             <InputContainer size="w-1/4">
-              <Label htmlFor="unitValue">Valor Unitário</Label>
+              <Label htmlFor="unitValueInCents">Valor Unitário</Label>
               <Controller
                 name="unitValueInCents"
                 control={createClientForm.control}

@@ -39,12 +39,15 @@ export const convertISODateToPTBR = (date: string): string => date.split('-').re
 export const convertPTBRDateToISO = (date: string): string => date.split('/').reverse().join('-')
 
 // ------------------- Currency -------------------
-export const formatCurrency = (value: string) => {
+export const formatCurrency = (value: string): string => {
   let formattedValue = value.replace(/\D/g, "")
 
   formattedValue = formattedValue.replace(/^0+/, '');
   formattedValue = formattedValue.replace(/(\d)(\d{2})$/, "$1,$2")
   formattedValue = formattedValue.replace(/(?=(\d{3})+(\D))\B/g, ".")
+
+  if(formattedValue.length === 1) formattedValue = `0,0${formattedValue}`
+  if(formattedValue.length === 2) formattedValue = `0,${formattedValue}`
 
   return formattedValue;
 };
@@ -52,22 +55,3 @@ export const formatCurrency = (value: string) => {
 export const transformCurrencyFromCentsToBRLString = (cents: number): string => (cents / 100).toFixed(2).replace('.', ',')
 
 export const transformCurrencyFromBRLStringToCents = (BRLString: string): number => parseInt(leaveOnlyDigits(BRLString))
-
-// export const applyCurrencyMaskReturningString = (value: string): string => {
-//   return value.replace(/[^\d,]/g, '')
-// }
-
-// export const transformCurrencyStringToNumber = (value: string): number => {
-//   return parseFloat(value.replace(',', '.'))
-// }
-
-// export const transformCurrencyNumberToString = (value: number): string => {
-//   return value.toFixed(2).replace('.', ',')
-// }
-
-// export const validateCurrencyInput = (value: string): boolean => {
-//   const splitted = value.split(',')
-//   if (![1, 2].includes(splitted.length)) return false
-//   if (splitted.length === 2 && ![1, 2].includes(splitted[1].length)) return false
-//   return true
-// }

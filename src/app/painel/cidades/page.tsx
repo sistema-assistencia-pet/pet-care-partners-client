@@ -141,9 +141,9 @@ export default function CitiesPage() {
   const formatCities = (cities: ICity[]): ICityToBeDisplayed[] => {
     return cities.map((city) => {
       return {
-        id: city.id,
-        name: city.name,
-        state: STATE[city.stateId]
+        id: city.id ?? '',
+        name: city.name ?? '',
+        state: STATE[city.stateId] ?? ''
       }
     })
   }
