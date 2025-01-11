@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useParams } from 'next/navigation'
-import { v4 as uuid } from 'uuid'
+import { useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 
@@ -19,11 +19,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
-  applyCepMask,
-  applyCnpjMask,
   captalize,
   formatDateTime,
-  applyPhoneNumberMask,
   leaveOnlyDigits,
   transformCurrencyFromCentsToBRLString
 } from '@/lib/utils'
@@ -31,25 +28,16 @@ import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DetailsField } from '@/components/DetailsField'
 import { DetailsRow } from '@/components/DetailsRow'
-import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
+import { Form } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { InputContainer } from '@/components/InputContainer'
 import InputMask from "react-input-mask"
 import { Label } from '@/components/ui/label'
-import Link from 'next/link'
 import { Pencil, Trash2 } from 'lucide-react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
 import { Separator } from '@/components/ui/separator'
-import { STATE, STATUS } from '@/lib/enums'
+import { STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { SELECT_DEFAULT_VALUE } from '@/lib/constants'
 import { Textarea } from '@/components/ui/textarea'
 
 export default function VoucherDetailsPage() {
@@ -96,6 +84,7 @@ export default function VoucherDetailsPage() {
   }
 
   const params = useParams()
+  const { push } = useRouter()
   const { toast } = useToast()
   
   // --------------------------- FETCH VOUCHER ---------------------------
@@ -278,10 +267,13 @@ export default function VoucherDetailsPage() {
   // --------------------------- RETURN ---------------------------
   return (
     <DashboardLayout
-      title={`${voucher?.partner.fantasyName || ''}`}
+      title={`${voucher?.title || ''}`}
     >
       {/* Header Buttons */}
       <div className="flex justify-between w-full">
+        <Button type="button" onClick={() => push(`/painel/vouchers/${params.id}/codigos`)}>
+          Visualizar Códigos
+        </Button>
         <div className="flex gap-4 justify-end w-full">
 
           {/* Inactivate Voucher */}

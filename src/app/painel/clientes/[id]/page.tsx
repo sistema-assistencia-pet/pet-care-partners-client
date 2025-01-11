@@ -343,7 +343,7 @@ export default function ClientDetailsPage() {
     formData.append("file", file)
 
     const response = await sendRequest({
-      endpoint: `/member/${params.id}/create-members-in-bulk`,
+      endpoint: `/member/${params.id}/create-in-bulk`,
       method: 'POST',
       data: formData,
     })
