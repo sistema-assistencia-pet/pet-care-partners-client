@@ -973,7 +973,7 @@ export default function ClientDetailsPage() {
         <DetailsRow>
           <DetailsField label="Valor do Boleto" value={transformCurrencyFromCentsToBRLString(client?.lumpSumInCents ?? 0)} width="min-w-52 w-full" />
           <DetailsField label="Valor Unitário" value={transformCurrencyFromCentsToBRLString(client?.unitValueInCents ?? 0)} width="min-w-52 w-full" />
-          <DetailsField label="Saldo Dispoível" value={transformCurrencyFromCentsToBRLString(client?.availableBalanceInCents ?? 0)} width="min-w-52 w-full" />
+          <DetailsField label="Saldo Disponível" value={transformCurrencyFromCentsToBRLString(client?.availableBalanceInCents ?? 0)} width="min-w-52 w-full" />
           <DetailsField label="URL do Contrato">
             <Link
               className="text-primary font-semibold"

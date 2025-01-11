@@ -340,7 +340,7 @@ export default function CitiesPage() {
                   onSubmit={newCityForm.handleSubmit((data) => submitNewCity(data))}
                 >
                   <div className="flex flex-col space-y-1.5 bg-white">
-                    {/* search input */}
+                    {/* name input */}
                     <div className="flex flex-col grow space-y-1.5 bg-white">
                       <Input { ...newCityForm.register("name") } placeholder="Nome da cidade" type="text" />
                     </div>
@@ -436,16 +436,16 @@ export default function CitiesPage() {
           <AlertDialogTitle>Excluir cidade</AlertDialogTitle>
           <AlertDialogDescription>
             Tem certeza que deseja excluir esta cidade? <br />
-            Essa ação não poderá ser desfeita.
+            Essa ação <strong className='text-black'>não</strong> poderá ser desfeita.
           </AlertDialogDescription>
           <AlertDialogFooter>
             <AlertDialogCancel type="button" onClick={() => setIsUpdateCityDialogOpen(false)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              className='rounded-md font-medium text-sm uppercase px-8 h-9 bg-primary text-white flex flex-col justify-center disabled:opacity-50'
+              className='rounded-md font-medium text-sm uppercase px-8 h-9 bg-destructive hover:bg-destructive hover:opacity-90 text-white flex flex-col justify-center disabled:opacity-50'
               onClick={submitDeleteCity}
               type="button"
               >
-              Confirmar
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

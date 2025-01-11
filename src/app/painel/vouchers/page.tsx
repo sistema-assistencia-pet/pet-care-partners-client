@@ -1,6 +1,6 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -8,13 +8,15 @@ import { v4 as uuid } from 'uuid'
 
 import {
   captalize,
+  formatCurrency,
+  leaveOnlyDigits,
   removeSpecialCharacters,
   transformCurrencyFromCentsToBRLString,
 } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
 import { DataTable } from '../../../components/DataTable'
-import { Eye, FilterX } from 'lucide-react'
+import { Check, Eye, FilterX, Pencil, Plus, Settings, Settings2, XIcon } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@radix-ui/react-label'
@@ -26,7 +28,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
-import { PAGINATION_LIMIT, SELECT_DEFAULT_VALUE } from '@/lib/constants'
+import { PAGINATION_LIMIT, SELECT_DEFAULT_VALUE, WAITING_TIME_IN_HOURS_DEFAULT_VALUE } from '@/lib/constants'
 import {
   Select,
   SelectContent,
@@ -35,9 +37,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
-import { STATE, STATUS } from '@/lib/enums'
+import { ROLE, STATE, STATUS, WAITING_TIME_IN_HOURS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { DetailsRow } from '@/components/DetailsRow'
+import { InputContainer } from '@/components/InputContainer'
+import { DetailsField } from '@/components/DetailsField'
 
 export default function VouchersPage() {
   // --------------------------- PAGE SETUP ---------------------------
@@ -106,23 +112,117 @@ export default function VouchersPage() {
     {
       header: `Estado`,
       accessorKey: `partner.state.name`
-    },
-    {
-      header: `Ações`,
-      accessorKey: `id`,
-      cell: ({ row: { original: { id } } }) => (
-        <Button
-          className=''
-          onClick={() => push(`/painel/vouchers/${id}`)}
-          size="icon"
-          title="Visualizar Detalhes"
-          variant="outline"
-        >
-          <Eye />
-        </Button>
-      )
     }
   ]
+
+  if (user?.roleId === ROLE.CLIENT_ADMIN) {
+    columns.push(
+      {
+        header: `Disponível`,
+        size: 2,
+        accessorKey: `voucherSettingsByClients`,
+        cell: ({ row: { original: { voucherSettingsByClients } } }) => {
+          if (
+            voucherSettingsByClients
+              .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id)
+          ) {
+            return <div className='flex gap-4 items-center'>
+              <Check className='text-green-400 h-5'/>
+            </div>
+          } else {
+            return <div className='flex gap-4 items-center'>
+              <XIcon className='text-destructive h-5'/>
+            </div>
+          }
+      }},
+      {
+        header: `Saldo Alocado`,
+        size: 2,
+        accessorKey: `voucherSettingsByClients`,
+        cell: ({ row: { original: { voucherSettingsByClients } } }) => {
+          if (
+            voucherSettingsByClients
+              .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id)
+          ) {
+            return <div className='flex gap-4 items-center'>
+              <span>
+                R$ {
+                  transformCurrencyFromCentsToBRLString(voucherSettingsByClients
+                    .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id)
+                      ?.reservedBalanceInCents ?? 0)
+                }
+              </span>
+            </div>
+          } else {
+            return <div className='flex gap-4 items-center'>
+              <span>-</span>
+            </div>
+          }
+      }},
+      {
+        header: `Ações`,
+        size: 2,
+        accessorKey: `voucherSettingsByClients`,
+        cell: ({ row: { original: { id, voucherSettingsByClients } } }) => (
+          <div className='flex gap-4 items-center'>
+            <Button
+              className=''
+              onClick={() => push(`/painel/vouchers/${id}`)}
+              size="icon"
+              title="Visualizar Detalhes"
+              variant="outline"
+            >
+              <Eye />
+            </Button>
+            <Button
+              className=''
+              onClick={() => startVoucherConfigurationProcess(id)}
+              size="icon"
+              title="Configurar voucher"
+              variant="outline"
+              >
+              <Settings className='h-5'/>
+            </Button>
+            {
+              voucherSettingsByClients
+                .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id) && (
+                  <Button
+                    className=''
+                    onClick={() => startVoucherConfigurationRemovingProcess(id)}
+                    size="icon"
+                    title="Remover voucher"
+                    variant="outline"
+                    >
+                    <XIcon className='text-destructive h-5' />
+                  </Button>
+                )
+            }
+          </div>
+        )
+      }
+    )
+  } else {
+    columns.push(
+      {
+        header: `Ações`,
+        size: 2,
+        accessorKey: `voucherSettingsByClients`,
+        cell: ({ row: { original: { id } } }) => (
+          <div className='flex gap-4 items-center'>
+            <Button
+              className=''
+              onClick={() => push(`/painel/vouchers/${id}`)}
+              size="icon"
+              title="Visualizar Detalhes"
+              variant="outline"
+            >
+              <Eye />
+            </Button>
+          </div>
+        )
+      }
+    )
+  }
 
   // --------------------------- FILTER ---------------------------
   interface IFilterFormValues {
@@ -289,6 +389,126 @@ export default function VouchersPage() {
     setCities(formattedCities)
   }
 
+  // --------------------------- FETCH CLIENT ---------------------------
+  interface IClientFromAPI {
+    availableBalanceInCents: number
+  }
+
+  const [client, setClient] = useState<IClientFromAPI | null>(null)
+
+  const fetchClient = async (id: string) => {
+    const response = await sendRequest<{ client: IClientFromAPI }>({
+      endpoint: `/client/${id}`,
+      method: 'GET',
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      setClient(null)
+
+      return
+    }
+
+    setClient(response.data.client)
+  }
+
+  // -------------- CLIENT-VOUCHER CONFIGURATION --------------
+  const [isVoucherConfigurationDialogOpen, setIsVoucherConfigurationDialogOpen] = useState(false);
+  const [voucherConfigurationBeingUpdatedId, setVoucherConfigurationBeingUpdatedId] = useState<string | null>(null)
+
+  interface INewVoucherConfiguration {
+    rechargeType: '-' | '+'
+    rechargeAmountInCents: string
+    waitingTimeInHours: string
+  }
+
+  const NEW_VOUCHER_CONFIGURATION_DEFAULT_VALUES: INewVoucherConfiguration = {
+    rechargeType: '+',
+    rechargeAmountInCents: '',
+    waitingTimeInHours: WAITING_TIME_IN_HOURS_DEFAULT_VALUE.toString()
+  }
+
+  const newVoucherConfigurationForm = useForm<INewVoucherConfiguration>({
+    mode: 'onSubmit',
+    defaultValues: NEW_VOUCHER_CONFIGURATION_DEFAULT_VALUES
+  })
+
+  const startVoucherConfigurationProcess = (voucherId: string) => {
+    setVoucherConfigurationBeingUpdatedId(voucherId)
+    setIsVoucherConfigurationDialogOpen(true)
+  }
+
+  const submitVoucherConfiguration = async (newVoucherConfigurationData: INewVoucherConfiguration) => {
+    const response = await sendRequest({
+      endpoint: `/client/${user?.client?.id}/configure-voucher`,
+      method: 'POST',
+      data: {
+        rechargeAmountInCents: parseInt(
+          `${newVoucherConfigurationData.rechargeType}${leaveOnlyDigits(newVoucherConfigurationData.rechargeAmountInCents ?? 0)}`
+        ),
+        waitingTimeInHours: parseInt(newVoucherConfigurationData.waitingTimeInHours ?? WAITING_TIME_IN_HOURS_DEFAULT_VALUE),
+        voucherId: voucherConfigurationBeingUpdatedId
+      }
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: 'success'
+    })
+
+    fetchVouchers()
+    setVoucherConfigurationBeingUpdatedId(null)
+    setIsVoucherConfigurationDialogOpen(false)
+  }
+
+  // -------------- REMOVE CLIENT-VOUCHER CONFIGURATION --------------
+  const [isRemoveVoucherConfigurationDialogOpen, setIsRemoveVoucherConfigurationDialogOpen] = useState(false);
+  const [voucherConfigurationBeingDeletedId, setVoucherConfigurationBeingDeletedId] = useState<string | null>(null)
+
+  const startVoucherConfigurationRemovingProcess = (voucherId: string) => {
+    setVoucherConfigurationBeingDeletedId(voucherId)
+    setIsRemoveVoucherConfigurationDialogOpen(true)
+  }
+
+  const submitRemoveVoucherConfiguration = async () => {
+    const response = await sendRequest({
+      endpoint: `/client/${user?.client?.id}/remove-voucher-configuration`,
+      method: 'POST',
+      data: { voucherId: voucherConfigurationBeingDeletedId }
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: 'success'
+    })
+
+    fetchVouchers()
+    setVoucherConfigurationBeingDeletedId(null)
+    setIsRemoveVoucherConfigurationDialogOpen(false)
+  }
+
   // --------------------------- PAGINATION ---------------------------
   const [skip, setSkip] = useState<number>(0)
   const [page, setPage] = useState<number>(1)
@@ -312,6 +532,7 @@ export default function VouchersPage() {
   // Carrega lista de categorias quando a página carrega
   useEffect(() => {
     fetchCategories()
+    if(user?.client?.id) fetchClient(user.client.id)
   }, [])
 
   // Carrega lista de parceiros quando a página carrega ou a paginação muda
@@ -508,6 +729,131 @@ export default function VouchersPage() {
           </Button>
         </form>
       </Form>
+
+      {/*  Configure Voucher Dialog */}
+      <AlertDialog open={isVoucherConfigurationDialogOpen} onOpenChange={setIsVoucherConfigurationDialogOpen}>
+        <AlertDialogContent className='max-w-[50%]'>
+          <AlertDialogTitle>Disponibilizar voucher</AlertDialogTitle>
+          <AlertDialogDescription>
+            <Form {...newVoucherConfigurationForm}>
+              <form
+                className='flex flex-col gap-4'
+                onSubmit={newVoucherConfigurationForm.handleSubmit((data) => submitVoucherConfiguration(data))}
+              >
+                <DetailsRow>
+                  <span className='text-lg'>
+                    <span className='font-semibold'>Saldo disponível: R$</span> {transformCurrencyFromCentsToBRLString(client?.availableBalanceInCents ?? 0)}
+                  </span>
+                </DetailsRow>
+
+                <DetailsRow>
+                  <InputContainer>
+                    <Label htmlFor="rechargeType">Tipo</Label>
+                    <FormField
+                      control={newVoucherConfigurationForm.control}
+                      name="rechargeType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className='bg-white'>
+                                <SelectValue placeholder="Tipo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value='+'>Adicionar</SelectItem>
+                              <SelectItem value='-'>Remover</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </InputContainer>
+                  <InputContainer>
+                    <Label htmlFor="rechargeAmountInCents">Valor da Recarga</Label>
+                    <Controller
+                      name="rechargeAmountInCents"
+                      control={newVoucherConfigurationForm.control}
+                      render={({ field }) => (
+                        <Input
+                          className="bg-white"
+                          value={field.value}
+                          onChange={(e) => field.onChange(formatCurrency(e.target.value))}
+                          placeholder="00,00"
+                        />
+                      )}
+                    />
+                  </InputContainer>
+                  <InputContainer>
+                  <Label htmlFor="waitingTimeInHours">Tempo de espera entre utilizações</Label>
+                  <FormField
+                    control={newVoucherConfigurationForm.control}
+                    name="waitingTimeInHours"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white">
+                              <SelectValue placeholder="" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                          {
+                            Object
+                              .entries(WAITING_TIME_IN_HOURS)
+                              .filter(([key, _value]) => isNaN(Number(key)))
+                              .map(([key, value]) => (
+                                <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                              )
+                            )
+                          }
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                </InputContainer>
+                </DetailsRow>
+                <AlertDialogFooter>
+                  <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className='rounded-md font-medium text-sm uppercase px-8 h-9 bg-primary text-white flex flex-col justify-center disabled:opacity-50'
+                    // disabled={
+                    //   newCityForm.getValues('name').length === 0
+                    //   || !newCityForm.getValues('stateId')
+                    // }
+                    type="submit"
+                  >
+                    Confirmar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </form>
+            </Form>
+          </AlertDialogDescription>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Category Dialog */}
+      <AlertDialog open={isRemoveVoucherConfigurationDialogOpen} onOpenChange={setIsRemoveVoucherConfigurationDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Remover voucher?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja excluir esta categoria? <br />
+            Após remover o voucher, o saldo alocado a ele irá retornar para o saldo disponível do cliente. <br />
+            Essa ação <strong className='text-black'>não</strong> poderá ser desfeita.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel type="button" onClick={() => setIsRemoveVoucherConfigurationDialogOpen(false)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className='rounded-md font-medium text-sm uppercase px-8 h-9 bg-destructive text-white flex flex-col justify-center disabled:opacity-50 hover:bg-destructive hover:opacity-90'
+              onClick={submitRemoveVoucherConfiguration}
+              type="button"
+              >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Table */}
       <DataTable columns={columns} data={vouchers} />

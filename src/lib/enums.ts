@@ -45,3 +45,12 @@ export enum STATE {
   SE = 26,
   TO = 27
 }
+
+export enum WAITING_TIME_IN_HOURS {
+  UMA_HORA = 1,
+  DUAS_HORAS = 2,
+  QUATRO_HORAS = 4,
+  DOZE_HORAS = 12,
+  UM_DIA = 24,
+  DOIS_DIAS = 48
+}
