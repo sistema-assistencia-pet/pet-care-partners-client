@@ -88,6 +88,7 @@ export default function LoginPage() {
     <Card className="w-80">
       <CardHeader className="flex flex-col justify-center text-center items-center">
         <TicketPercent color="#881ded" size={128}/>
+        <span className="text-center text-2xl font-bold text-primary mb-4">GIFT 2 ME</span>
         <CardDescription>Faça login para entrar no painel.</CardDescription>
       </CardHeader>
 
