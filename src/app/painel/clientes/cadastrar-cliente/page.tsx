@@ -190,8 +190,8 @@ export default function RegisterClient() {
       managerPhoneNumber: leaveOnlyDigits(createClientData.managerPhoneNumber),
       financePhoneNumber: leaveOnlyDigits(createClientData.financePhoneNumber),
       managerCpf: removeCpfMask(createClientData.managerCpf),
-      unitValueInCents: parseInt(leaveOnlyDigits(createClientData.unitValueInCents ?? '')),
-      lumpSumInCents: parseInt(leaveOnlyDigits(createClientData.lumpSumInCents ?? '')),
+      unitValueInCents: parseInt(leaveOnlyDigits(createClientData.unitValueInCents || '0')),
+      lumpSumInCents: parseInt(leaveOnlyDigits(createClientData.lumpSumInCents || '0')),
       address: {
         cep: createClientData.address?.cep ?? '',
         street: createClientData.address?.street ?? '',
@@ -206,7 +206,7 @@ export default function RegisterClient() {
 
   const createClient = async (createClientData: CreateClientFormSchema): Promise<void> => {
     const formattedCreateClientData = formatCreateClientData(createClientData)
-    
+
     const response = await sendRequest({
       endpoint: '/client',
       method: 'POST',

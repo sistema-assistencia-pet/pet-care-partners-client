@@ -59,24 +59,24 @@ export default function MemberDetailsPage() {
   }
 
   interface IAddress {
-    id: number;
-    cep: string;
-    street: string;
-    number: string;
-    complement: string;
-    neighborhood: string;
-    city: ICity;
-    state: IState;
+    id: number
+    cep: string
+    street: string
+    number: string
+    complement: string
+    neighborhood: string
+    city: ICity | null
+    state: IState | null
   }
 
   interface IRole {
-    id: number;
-    name: string;
+    id: number
+    name: string
   }
 
   interface IStatus {
-    id: number;
-    translation: string;
+    id: number
+    translation: string
   }
 
   interface IClient {
@@ -95,7 +95,7 @@ export default function MemberDetailsPage() {
     role: IRole
     status: IStatus
     client: IClient
-    address: IAddress
+    address: IAddress | null
     createdAt: string
     updatedAt: string
   }
@@ -205,19 +205,19 @@ export default function MemberDetailsPage() {
     if (member.address === null) {
       updateMemberForm.setValue('address', null)
     } else {
-      updateMemberForm.setValue('address.cep', member?.address?.cep ?? '')
-      updateMemberForm.setValue('address.street', member?.address?.street ?? '')
-      updateMemberForm.setValue('address.number', member?.address?.number ?? '')
-      updateMemberForm.setValue('address.complement', member?.address?.complement ?? '')
-      updateMemberForm.setValue('address.neighborhood', member?.address?.neighborhood ?? '')
-      updateMemberForm.setValue('address.cityId', member?.address?.city?.id ? member.address.city.id.toString() : SELECT_DEFAULT_VALUE)
-      updateMemberForm.setValue('address.stateId', member?.address?.state?.id ? member.address.state.id.toString() : SELECT_DEFAULT_VALUE)
+      updateMemberForm.setValue('address.cep', member?.address.cep ?? '')
+      updateMemberForm.setValue('address.street', member?.address.street ?? '')
+      updateMemberForm.setValue('address.number', member?.address.number ?? '')
+      updateMemberForm.setValue('address.complement', member?.address.complement ?? '')
+      updateMemberForm.setValue('address.neighborhood', member?.address.neighborhood ?? '')
+      updateMemberForm.setValue('address.cityId', member?.address?.city ? member.address.city.id.toString() : SELECT_DEFAULT_VALUE)
+      updateMemberForm.setValue('address.stateId', member?.address?.state ? member.address.state.id.toString() : SELECT_DEFAULT_VALUE)
     }
   }
 
   const formatUpdatedMemberData = (memberData: UpdateMemberFormSchema): IMemberToBeUpdated => {
-    let stateId = memberData.address?.stateId
-    let cityId = memberData.address?.cityId
+    let stateId = memberData?.address?.stateId
+    let cityId = memberData?.address?.cityId
 
     if (
       (stateId === SELECT_DEFAULT_VALUE) ||
@@ -391,7 +391,7 @@ export default function MemberDetailsPage() {
       fetchCities(selectedStateId)
     }
 
-    if (selectedStateId !== member?.address?.state.id.toString()) {
+    if (selectedStateId !== member?.address?.state?.id.toString()) {
       updateMemberForm.setValue('address.cityId', SELECT_DEFAULT_VALUE)
     }
   }, [selectedStateId])

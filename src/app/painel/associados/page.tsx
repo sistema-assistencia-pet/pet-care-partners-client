@@ -297,9 +297,11 @@ export default function MembersPage() {
     }
 
     toast({
-      description: response.message,
+      description: `${response.message} Você pode fechar essa janela agora.`,
       variant: "success"
     })
+
+    fetchMembers()
   }
 
   // --------------------------- PAGINATION ---------------------------

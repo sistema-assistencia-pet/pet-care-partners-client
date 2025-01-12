@@ -493,7 +493,7 @@ export default function ClientDetailsPage() {
       method: 'POST',
       data: {
         balanceDistributionSetting: parseInt(data.balanceDistributionSetting ?? BALANCE_DISTRIBUTION_SETTING_DEFAULT_VALUE),
-        rechargeAmountInCents: parseInt(leaveOnlyDigits(data.rechargeAmountInCents ?? 0)),
+        rechargeAmountInCents: parseInt(leaveOnlyDigits(data.rechargeAmountInCents || '0')),
         waitingTimeInHours: parseInt(data.waitingTimeInHours ?? WAITING_TIME_IN_HOURS_DEFAULT_VALUE)
       }
     })

@@ -41,6 +41,7 @@ import { PAGINATION_LIMIT, SELECT_DEFAULT_VALUE } from '@/lib/constants'
 import { sendRequest } from '@/lib/sendRequest'
 import { STATE } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
+import { DetailsRow } from '@/components/DetailsRow'
 
 export default function CitiesPage() {
   // --------------------------- PAGE SETUP ---------------------------
@@ -53,19 +54,30 @@ export default function CitiesPage() {
   interface ICityToBeDisplayed {
     id: number
     name: string
-    state: string
+    state: {
+      id: number
+      name: string
+    }
   }
 
   const { toast } = useToast()
 
   const columns: ColumnDef<ICityToBeDisplayed>[] = [
     {
+      header: `Id`,
+      accessorKey: `id`,
+    },
+    {
       header: `Nome`,
       accessorKey: `name`,
     },
     {
+      header: `Id do Estado`,
+      accessorKey: `state.id`
+    },
+    {
       header: `Estado`,
-      accessorKey: `state`
+      accessorKey: `state.name`
     },
     {
       header: `Ações`,
@@ -143,7 +155,10 @@ export default function CitiesPage() {
       return {
         id: city.id ?? '',
         name: city.name ?? '',
-        state: STATE[city.stateId] ?? ''
+        state: {
+          id: city.stateId ?? '',
+          name: STATE[city.stateId] ?? ''
+        }
       }
     })
   }
@@ -339,14 +354,14 @@ export default function CitiesPage() {
                   className='flex flex-col gap-4'
                   onSubmit={newCityForm.handleSubmit((data) => submitNewCity(data))}
                 >
-                  <div className="flex flex-col space-y-1.5 bg-white">
+                  <DetailsRow>
                     {/* name input */}
                     <div className="flex flex-col grow space-y-1.5 bg-white">
                       <Input { ...newCityForm.register("name") } placeholder="Nome da cidade" type="text" />
                     </div>
 
                     {/* state */}
-                    <div className="flex flex-col space-y-1.5 bg-white">
+                    <div className="flex flex-col space-y-1.5">
                       <FormField
                         control={newCityForm.control}
                         name="stateId"
@@ -354,7 +369,7 @@ export default function CitiesPage() {
                           <FormItem>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                                <SelectTrigger className="w-28">
+                                <SelectTrigger className="w-28 bg-white">
                                   <SelectValue placeholder="Estado" />
                                 </SelectTrigger>
                               </FormControl>
@@ -374,7 +389,7 @@ export default function CitiesPage() {
                         )}
                       />
                     </div>
-                  </div>
+                    </DetailsRow>
                   <AlertDialogFooter>
                     <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
                     <AlertDialogAction
@@ -403,13 +418,14 @@ export default function CitiesPage() {
             className='flex flex-col gap-4'
             onSubmit={submitUpdatedCity}
             >
-            <div className="flex flex-col space-y-1.5 bg-white">
+            <div className="flex flex-col space-y-1.5">
               <Label
                 htmlFor="update-city-name-input"
                 >
                 Nome da cidade
               </Label>
               <Input
+                className='bg-white'
                 id="update-city-name-input"
                 onChange={({ target: { value } }) => setCityToBeUpdatedName(value)}
                 type="text"

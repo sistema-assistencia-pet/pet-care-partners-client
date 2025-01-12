@@ -41,6 +41,10 @@ export default function CategoriesPage() {
 
   const columns: ColumnDef<ICategory>[] = [
     {
+      header: `Id`,
+      accessorKey: `id`,
+    },
+    {
       header: `Nome`,
       accessorKey: `name`,
     },
@@ -209,13 +213,14 @@ export default function CategoriesPage() {
                   className='flex flex-col gap-4'
                   onSubmit={submitNewCategory}
                 >
-                  <div className="flex flex-col space-y-1.5 bg-white">
+                  <div className="flex flex-col space-y-1.5">
                     <Label
                       htmlFor="category-name-input"
                     >
                       Nome da categoria
                     </Label>
                     <Input
+                      className='bg-white'
                       id="category-name-input"
                       onChange={({ target: { value } }) => setNewCategoryName(value)}
                       type="text"
@@ -246,13 +251,14 @@ export default function CategoriesPage() {
             className='flex flex-col gap-4'
             onSubmit={submitUpdatedCategory}
             >
-            <div className="flex flex-col space-y-1.5 bg-white">
+            <div className="flex flex-col space-y-1.5">
               <Label
                 htmlFor="update-category-name-input"
                 >
                 Nome da categoria
               </Label>
               <Input
+                className='bg-white'
                 id="update-category-name-input"
                 onChange={({ target: { value } }) => setCategoryToBeUpdatedName(value)}
                 type="text"

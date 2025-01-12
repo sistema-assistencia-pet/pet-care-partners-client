@@ -431,7 +431,7 @@ export default function SetupVouchersPage() {
       method: 'POST',
       data: {
         rechargeAmountInCents: parseInt(
-          `${newVoucherConfigurationData.rechargeType}${leaveOnlyDigits(newVoucherConfigurationData.rechargeAmountInCents ?? 0)}`
+          `${newVoucherConfigurationData.rechargeType}${leaveOnlyDigits(newVoucherConfigurationData.rechargeAmountInCents || '0')}`
         ),
         waitingTimeInHours: parseInt(newVoucherConfigurationData.waitingTimeInHours ?? WAITING_TIME_IN_HOURS_DEFAULT_VALUE),
         voucherId: voucherConfigurationBeingUpdatedId

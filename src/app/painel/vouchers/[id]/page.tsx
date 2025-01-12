@@ -159,7 +159,7 @@ export default function VoucherDetailsPage() {
 
   const formatUpdateVoucherData = (voucherData: UpdateVoucherFormSchema): IVoucherToBeUpdated => ({
     ...voucherData,
-    value: parseInt(leaveOnlyDigits(voucherData.value ?? ''))
+    value: parseInt(leaveOnlyDigits(voucherData.value || '0'))
   })
 
   const updateVoucher = async (voucher: UpdateVoucherFormSchema) => {

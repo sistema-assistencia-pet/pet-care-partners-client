@@ -264,9 +264,9 @@ export default function VouchersPage() {
     const searchInputWithoutMask = removeSpecialCharacters(searchInput)
 
     if (searchInput) query.append('search-input', searchInputWithoutMask)
-    if (categoryId && categoryId !== SELECT_DEFAULT_VALUE) query.append('category-id', categoryId)
-    if (cityId && cityId !== SELECT_DEFAULT_VALUE) query.append('city-id', cityId)
-    if (stateId && stateId !== SELECT_DEFAULT_VALUE) query.append('state-id', stateId)
+    if (categoryId && categoryId !== SELECT_DEFAULT_VALUE) query.append('partner-category-id', categoryId)
+    if (cityId && cityId !== SELECT_DEFAULT_VALUE) query.append('partner-city-id', cityId)
+    if (stateId && stateId !== SELECT_DEFAULT_VALUE) query.append('partner-state-id', stateId)
     if (statusId) query.append('status-id', statusId)
     if (onlyMine === 'true' && user?.client?.id) query.append('client-id', user?.client?.id)
 
@@ -455,7 +455,7 @@ export default function VouchersPage() {
       method: 'POST',
       data: {
         rechargeAmountInCents: parseInt(
-          `${newVoucherConfigurationData.rechargeType}${leaveOnlyDigits(newVoucherConfigurationData.rechargeAmountInCents ?? 0)}`
+          `${newVoucherConfigurationData.rechargeType}${leaveOnlyDigits(newVoucherConfigurationData.rechargeAmountInCents || '0')}`
         ),
         waitingTimeInHours: parseInt(newVoucherConfigurationData.waitingTimeInHours ?? WAITING_TIME_IN_HOURS_DEFAULT_VALUE),
         voucherId: voucherConfigurationBeingUpdatedId

@@ -76,7 +76,7 @@ export default function RegisterVoucher() {
 
   const formatCreateVoucherData = (voucherData: CreateVoucherFormSchema): IVoucherToBeCreated => ({
     ...voucherData,
-    value: parseInt(leaveOnlyDigits(voucherData.value ?? ''))
+    value: parseInt(leaveOnlyDigits(voucherData.value || '0'))
   })
 
   const createVoucher = async (createVoucherData: CreateVoucherFormSchema): Promise<void> => {

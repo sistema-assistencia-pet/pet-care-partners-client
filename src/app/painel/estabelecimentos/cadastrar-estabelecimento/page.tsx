@@ -122,16 +122,16 @@ export default function RegisterPartner() {
       .optional(),
     managerPhoneNumber: z
       .string({ required_error: 'O campo Telefone do Responsável é obrigatório.' })
-      .min(10, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
-      .max(11, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
+      .min(13, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
+      .max(14, { message: 'O campo Telefone do Responsável deve ter 10 ou 11 caracteres.' })
       .optional(),
     managerEmail: z
       .string({ required_error: 'O campo E-mail do Responsável é obrigatório.' })
       .optional(),
     businessPhoneNumber: z
       .string({ required_error: 'O campo Telefone Comercial é obrigatório.' })
-      .min(10, { message: 'O campo Telefone Comercial deve ter 10 ou 11 caracteres.' })
-      .max(11, { message: 'O campo Telefone Comercial deve ter 10 ou 11 caracteres.' })
+      .min(13, { message: 'O campo Telefone Comercial deve ter 10 ou 11 caracteres.' })
+      .max(14, { message: 'O campo Telefone Comercial deve ter 10 ou 11 caracteres.' })
       .optional(),
     about: z
       .string({ required_error: 'O campo Sobre é obrigatório.' })
