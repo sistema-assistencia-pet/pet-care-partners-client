@@ -43,9 +43,9 @@ import Link from 'next/link'
 import { Pencil, Trash2 } from 'lucide-react'
 import { sendRequest } from '@/lib/sendRequest'
 import { Separator } from '@/components/ui/separator'
-import { STATE, STATUS } from '@/lib/enums'
+import { BALANCE_DISTRIBUTION_SETTING, STATE, STATUS, WAITING_TIME_IN_HOURS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { SELECT_DEFAULT_VALUE } from '@/lib/constants'
+import { BALANCE_DISTRIBUTION_SETTING_DEFAULT_VALUE, SELECT_DEFAULT_VALUE, WAITING_TIME_IN_HOURS_DEFAULT_VALUE } from '@/lib/constants'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export default function ClientDetailsPage() {
@@ -469,6 +469,95 @@ export default function ClientDetailsPage() {
     setCities(formattedCities)
   }
 
+  // ------------------------ RECHARGE BALANCE ------------------------
+  interface IBalanceRecharge {
+    rechargeAmountInCents: string,
+    balanceDistributionSetting: string,
+    waitingTimeInHours: string
+  }
+
+  const BALANCE_RECHARGE_DEFULT_VALUES: IBalanceRecharge = {
+    rechargeAmountInCents: '',
+    balanceDistributionSetting: BALANCE_DISTRIBUTION_SETTING_DEFAULT_VALUE.toString(),
+    waitingTimeInHours: WAITING_TIME_IN_HOURS_DEFAULT_VALUE.toString()
+  }
+
+  const balanceRechargeForm = useForm<IBalanceRecharge>({
+    mode: 'onSubmit',
+    defaultValues: BALANCE_RECHARGE_DEFULT_VALUES
+  })
+
+  const rechargeBalance = async (data: IBalanceRecharge) => {
+    const response = await sendRequest({
+      endpoint: `/client/${params.id}/balance/recharge`,
+      method: 'POST',
+      data: {
+        balanceDistributionSetting: parseInt(data.balanceDistributionSetting ?? BALANCE_DISTRIBUTION_SETTING_DEFAULT_VALUE),
+        rechargeAmountInCents: parseInt(leaveOnlyDigits(data.rechargeAmountInCents ?? 0)),
+        waitingTimeInHours: parseInt(data.waitingTimeInHours ?? WAITING_TIME_IN_HOURS_DEFAULT_VALUE)
+      }
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: 'success'
+    })
+
+    fetchClient(params.id as string)
+  }
+
+  // ------------------------ DISTRIBUTE BALANCE ------------------------
+  interface IDistributeBalance {
+    balanceDistributionSetting: string,
+    waitingTimeInHours: string
+  }
+
+  const DISTRIBUTE_BALANCE_DEFULT_VALUES: IDistributeBalance = {
+    balanceDistributionSetting: BALANCE_DISTRIBUTION_SETTING_DEFAULT_VALUE.toString(),
+    waitingTimeInHours: WAITING_TIME_IN_HOURS_DEFAULT_VALUE.toString()
+  }
+
+  const distributeBalanceForm = useForm<IDistributeBalance>({
+    mode: 'onSubmit',
+    defaultValues: DISTRIBUTE_BALANCE_DEFULT_VALUES
+  })
+
+  const distributeBalance = async (data: IDistributeBalance) => {
+    const response = await sendRequest({
+      endpoint: `/client/${params.id}/balance/distribute`,
+      method: 'POST',
+      data: {
+        balanceDistributionSetting: parseInt(data.balanceDistributionSetting ?? BALANCE_DISTRIBUTION_SETTING_DEFAULT_VALUE),
+        waitingTimeInHours: parseInt(data.waitingTimeInHours ?? WAITING_TIME_IN_HOURS_DEFAULT_VALUE)
+      }
+    })
+
+    if (response.error) {
+      toast({
+        description: response.message,
+        variant: 'destructive'
+      })
+
+      return
+    }
+
+    toast({
+      description: response.message,
+      variant: 'success'
+    })
+
+    fetchClient(params.id as string)
+  }
+
   // --------------------------- USE EFFECT ---------------------------
   // Dispara envio do arquivo CSV para criação de associados
   useEffect(() => {
@@ -499,7 +588,214 @@ export default function ClientDetailsPage() {
     <DashboardLayout
       title={`${client?.fantasyName || ''}`}
     >
-      {/* Header Buttons */}
+      {/* First row */}
+      <div className="flex w-full gap-4">
+
+        {/* Setup Vouchers */}
+        <Button
+          disabled={client?.status.id !== STATUS.Ativo}
+          onClick={() => push(`/painel/clientes/${params.id}/configurar-vouchers`)}
+        >
+          Configurar Vouchers
+        </Button>
+
+        {/* Recharge Balance */}
+        {
+          client
+          && (
+            <AlertDialog>
+              <AlertDialogTrigger title='Editar' className='uppercase shadow hover:bg-secondary/90 leading-9 rounded-md px-8 cursor-pointer bg-secondary text-sm font-medium'>
+                Recarregar Saldo
+              </AlertDialogTrigger>
+              <AlertDialogContent className='max-h-screen overflow-y-auto max-w-[50%]'>
+                <AlertDialogTitle>Recarregar Saldo</AlertDialogTitle>
+                <Form { ...balanceRechargeForm }>
+                  <form
+                    className='flex flex-col gap-4'
+                    onSubmit={balanceRechargeForm.handleSubmit((data) => rechargeBalance(data))}
+                  >
+
+                    <InputContainer>
+                      <Label htmlFor="rechargeAmountInCents">Valor da Recarga</Label>
+                      <Controller
+                        name="rechargeAmountInCents"
+                        control={balanceRechargeForm.control}
+                        render={({ field }) => (
+                          <Input
+                            className="bg-white"
+                            value={field.value}
+                            onChange={(e) => field.onChange(formatCurrency(e.target.value))}
+                            placeholder="00,00"
+                          />
+                        )}
+                      />
+                    </InputContainer>
+                    <InputContainer>
+                        <Label htmlFor="balanceDistributionSetting">Distribuição do Saldo</Label>
+                        <FormField
+                          control={balanceRechargeForm.control}
+                          name="balanceDistributionSetting"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-white">
+                                    <SelectValue placeholder="" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {
+                                  Object
+                                    .entries(BALANCE_DISTRIBUTION_SETTING)
+                                    .filter(([key, _value]) => isNaN(Number(key)))
+                                    .map(([key, value]) => (
+                                      <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                                    )
+                                  )
+                                }
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )
+                        }
+                      />
+                    </InputContainer>
+                    <InputContainer>
+                      <Label htmlFor="waitingTimeInHours">Tempo de espera entre utilizações</Label>
+                      <FormField
+                        control={balanceRechargeForm.control}
+                        name="waitingTimeInHours"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-white">
+                                  <SelectValue placeholder="" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                              {
+                                Object
+                                  .entries(WAITING_TIME_IN_HOURS)
+                                  .filter(([key, _value]) => isNaN(Number(key)))
+                                  .map(([key, value]) => (
+                                    <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                                  )
+                                )
+                              }
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </InputContainer>
+
+                    <AlertDialogFooter>
+                      <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction type="submit">
+                        Confirmar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </form>
+                </Form>
+              </AlertDialogContent>
+            </AlertDialog>
+          )
+        }
+
+        {/* Distribute Balance */}
+        {
+          client
+          && (
+            <AlertDialog>
+              <AlertDialogTrigger title='Editar' className='uppercase shadow hover:bg-secondary/90 leading-9 rounded-md px-8 cursor-pointer bg-secondary text-sm font-medium'>
+                Distribuir Saldo
+              </AlertDialogTrigger>
+              <AlertDialogContent className='max-h-screen overflow-y-auto max-w-[50%]'>
+                <AlertDialogTitle>Distribuir Saldo</AlertDialogTitle>
+                <Form { ...distributeBalanceForm }>
+                  <form
+                    className='flex flex-col gap-4'
+                    onSubmit={distributeBalanceForm.handleSubmit((data) => distributeBalance(data))}
+                  >
+                    <InputContainer>
+                        <Label htmlFor="balanceDistributionSetting">Distribuição do Saldo</Label>
+                        <FormField
+                          control={distributeBalanceForm.control}
+                          name="balanceDistributionSetting"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger className="bg-white">
+                                    <SelectValue placeholder="" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                {
+                                  Object
+                                    .entries(BALANCE_DISTRIBUTION_SETTING)
+                                    .filter(([key, _value]) => isNaN(Number(key)))
+                                    .filter(([_key, value]) => value !== BALANCE_DISTRIBUTION_SETTING.NAO_DISTRIBUIR_ENTRE_VOUCHERS)
+                                    .map(([key, value]) => (
+                                      <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                                    )
+                                  )
+                                }
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                          )
+                        }
+                      />
+                    </InputContainer>
+                    <InputContainer>
+                      <Label htmlFor="waitingTimeInHours">Tempo de espera entre utilizações</Label>
+                      <FormField
+                        control={distributeBalanceForm.control}
+                        name="waitingTimeInHours"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-white">
+                                  <SelectValue placeholder="" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                              {
+                                Object
+                                  .entries(WAITING_TIME_IN_HOURS)
+                                  .filter(([key, _value]) => isNaN(Number(key)))
+                                  .map(([key, value]) => (
+                                    <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
+                                  )
+                                )
+                              }
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </InputContainer>
+
+                    <AlertDialogFooter>
+                      <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                      <AlertDialogAction type="submit">
+                        Confirmar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </form>
+                </Form>
+              </AlertDialogContent>
+            </AlertDialog>
+          )
+        }
+      </div>
+
+      <Separator />
+
+      {/* Second row */}
       <div className="flex justify-between w-full">
 
         {/* Create Members */}
@@ -536,7 +832,9 @@ export default function ClientDetailsPage() {
           {
             client?.status.id === STATUS.Ativo && (
               <AlertDialog>
-                <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>Inativar</AlertDialogTrigger>
+                <AlertDialogTrigger className='uppercase px-8 h-9 text-sm font-medium rounded-md border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground'>
+                  Inativar
+                </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirmar inativação?</AlertDialogTitle>

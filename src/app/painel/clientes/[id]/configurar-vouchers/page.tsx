@@ -3,7 +3,7 @@
 import { Controller, useForm } from 'react-hook-form'
 import { type ColumnDef } from "@tanstack/react-table"
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { v4 as uuid } from 'uuid'
 
 import {
@@ -24,7 +24,7 @@ import {
 } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import DashboardLayout from '@/components/DashboardLayout'
-import { DataTable } from '../../../components/DataTable'
+import { DataTable } from '../../../../../components/DataTable'
 import { DetailsRow } from '@/components/DetailsRow'
 import { Check, Eye, FilterX, Settings, XIcon } from 'lucide-react'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
@@ -52,7 +52,7 @@ import { ROLE, STATE, STATUS, WAITING_TIME_IN_HOURS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 import { useAuth } from '@/contexts/AuthContext'
 
-export default function VouchersPage() {
+export default function SetupVouchersPage() {
   // --------------------------- PAGE SETUP ---------------------------
   interface ICategory {
     id: number
@@ -92,9 +92,11 @@ export default function VouchersPage() {
     partner: IPartner
   }
 
+  const params = useParams()
   const { push } = useRouter()
   const { toast } = useToast()
-  const { user } = useAuth()
+  // const { user } = useAuth()
+  
 
   const columns: ColumnDef<IVoucher>[] = [
     {
@@ -119,117 +121,91 @@ export default function VouchersPage() {
     {
       header: `Estado`,
       accessorKey: `partner.state.name`
+    },
+    {
+      header: `Disponível`,
+      size: 2,
+      accessorKey: `voucherSettingsByClients`,
+      cell: ({ row: { original: { voucherSettingsByClients } } }) => {
+        if (
+          voucherSettingsByClients
+            .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === params.id)
+        ) {
+          return <div className='flex gap-4 items-center'>
+            <Check className='text-green-400 h-5'/>
+          </div>
+        } else {
+          return <div className='flex gap-4 items-center'>
+            <XIcon className='text-destructive h-5'/>
+          </div>
+        }
+    }},
+    {
+      header: `Saldo Alocado`,
+      size: 2,
+      accessorKey: `voucherSettingsByClients`,
+      cell: ({ row: { original: { voucherSettingsByClients } } }) => {
+        if (
+          voucherSettingsByClients
+            .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === params.id)
+        ) {
+          return <div className='flex gap-4 items-center'>
+            <span>
+              R$ {
+                transformCurrencyFromCentsToBRLString(voucherSettingsByClients
+                  .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === params.id)
+                    ?.reservedBalanceInCents ?? 0)
+              }
+            </span>
+          </div>
+        } else {
+          return <div className='flex gap-4 items-center'>
+            <span>-</span>
+          </div>
+        }
+    }},
+    {
+      header: `Ações`,
+      size: 2,
+      accessorKey: `voucherSettingsByClients`,
+      cell: ({ row: { original: { id, voucherSettingsByClients } } }) => (
+        <div className='flex gap-4 items-center'>
+          <Button
+            className=''
+            onClick={() => push(`/painel/vouchers/${id}`)}
+            size="icon"
+            title="Visualizar Detalhes"
+            variant="outline"
+          >
+            <Eye />
+          </Button>
+          <Button
+            className=''
+            onClick={() => startVoucherConfigurationProcess(id)}
+            size="icon"
+            title="Configurar voucher"
+            variant="outline"
+            >
+            <Settings className='h-5'/>
+          </Button>
+          {
+            voucherSettingsByClients
+              .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === params.id) && (
+                <Button
+                  className=''
+                  onClick={() => startVoucherConfigurationRemovingProcess(id)}
+                  size="icon"
+                  title="Remover voucher"
+                  variant="outline"
+                  >
+                  <XIcon className='text-destructive h-5' />
+                </Button>
+              )
+          }
+        </div>
+      )
     }
   ]
-
-  if (user?.roleId === ROLE.CLIENT_ADMIN) {
-    columns.push(
-      {
-        header: `Disponível`,
-        size: 2,
-        accessorKey: `voucherSettingsByClients`,
-        cell: ({ row: { original: { voucherSettingsByClients } } }) => {
-          if (
-            voucherSettingsByClients
-              .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id)
-          ) {
-            return <div className='flex gap-4 items-center'>
-              <Check className='text-green-400 h-5'/>
-            </div>
-          } else {
-            return <div className='flex gap-4 items-center'>
-              <XIcon className='text-destructive h-5'/>
-            </div>
-          }
-      }},
-      {
-        header: `Saldo Alocado`,
-        size: 2,
-        accessorKey: `voucherSettingsByClients`,
-        cell: ({ row: { original: { voucherSettingsByClients } } }) => {
-          if (
-            voucherSettingsByClients
-              .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id)
-          ) {
-            return <div className='flex gap-4 items-center'>
-              <span>
-                R$ {
-                  transformCurrencyFromCentsToBRLString(voucherSettingsByClients
-                    .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id)
-                      ?.reservedBalanceInCents ?? 0)
-                }
-              </span>
-            </div>
-          } else {
-            return <div className='flex gap-4 items-center'>
-              <span>-</span>
-            </div>
-          }
-      }},
-      {
-        header: `Ações`,
-        size: 2,
-        accessorKey: `voucherSettingsByClients`,
-        cell: ({ row: { original: { id, voucherSettingsByClients } } }) => (
-          <div className='flex gap-4 items-center'>
-            <Button
-              className=''
-              onClick={() => push(`/painel/vouchers/${id}`)}
-              size="icon"
-              title="Visualizar Detalhes"
-              variant="outline"
-            >
-              <Eye />
-            </Button>
-            <Button
-              className=''
-              onClick={() => startVoucherConfigurationProcess(id)}
-              size="icon"
-              title="Configurar voucher"
-              variant="outline"
-              >
-              <Settings className='h-5'/>
-            </Button>
-            {
-              voucherSettingsByClients
-                .find((voucherSettingsByClient) => voucherSettingsByClient.clientId === user.client?.id) && (
-                  <Button
-                    className=''
-                    onClick={() => startVoucherConfigurationRemovingProcess(id)}
-                    size="icon"
-                    title="Remover voucher"
-                    variant="outline"
-                    >
-                    <XIcon className='text-destructive h-5' />
-                  </Button>
-                )
-            }
-          </div>
-        )
-      }
-    )
-  } else {
-    columns.push(
-      {
-        header: `Ações`,
-        size: 2,
-        accessorKey: `voucherSettingsByClients`,
-        cell: ({ row: { original: { id } } }) => (
-          <div className='flex gap-4 items-center'>
-            <Button
-              className=''
-              onClick={() => push(`/painel/vouchers/${id}`)}
-              size="icon"
-              title="Visualizar Detalhes"
-              variant="outline"
-            >
-              <Eye />
-            </Button>
-          </div>
-        )
-      }
-    )
-  }
 
   // --------------------------- FILTER ---------------------------
   interface IFilterFormValues {
@@ -268,7 +244,7 @@ export default function VouchersPage() {
     if (cityId && cityId !== SELECT_DEFAULT_VALUE) query.append('city-id', cityId)
     if (stateId && stateId !== SELECT_DEFAULT_VALUE) query.append('state-id', stateId)
     if (statusId) query.append('status-id', statusId)
-    if (onlyMine === 'true' && user?.client?.id) query.append('client-id', user?.client?.id)
+    if (onlyMine === 'true' && params.id) query.append('client-id', params.id as string)
 
     setQuery(query)
     await fetchVouchers(query)
@@ -451,7 +427,7 @@ export default function VouchersPage() {
 
   const submitVoucherConfiguration = async (newVoucherConfigurationData: INewVoucherConfiguration) => {
     const response = await sendRequest({
-      endpoint: `/client/${user?.client?.id}/configure-voucher`,
+      endpoint: `/client/${params.id}/configure-voucher`,
       method: 'POST',
       data: {
         rechargeAmountInCents: parseInt(
@@ -492,7 +468,7 @@ export default function VouchersPage() {
 
   const submitRemoveVoucherConfiguration = async () => {
     const response = await sendRequest({
-      endpoint: `/client/${user?.client?.id}/remove-voucher-configuration`,
+      endpoint: `/client/${params.id}/remove-voucher-configuration`,
       method: 'POST',
       data: { voucherId: voucherConfigurationBeingDeletedId }
     })
@@ -539,7 +515,7 @@ export default function VouchersPage() {
   // Carrega lista de categorias e os dados do cliente quando a página carrega
   useEffect(() => {
     fetchCategories()
-    if(user?.client?.id) fetchClient(user.client.id)
+    if(params.id) fetchClient(params.id as string)
   }, [])
 
   // Carrega lista de parceiros quando a página carrega ou a paginação muda
@@ -594,7 +570,7 @@ export default function VouchersPage() {
                 <FormItem>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="w-36 bg-white" disabled={!user?.client?.id}>
+                      <SelectTrigger className="w-36 bg-white" disabled={!params.id}>
                         <SelectValue placeholder="Exibir" />
                       </SelectTrigger>
                     </FormControl>
@@ -792,33 +768,32 @@ export default function VouchersPage() {
                     />
                   </InputContainer>
                   <InputContainer>
-                    <Label htmlFor="waitingTimeInHours">Tempo de espera entre utilizações</Label>
-                    <FormField
-                      control={newVoucherConfigurationForm.control}
-                      name="waitingTimeInHours"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger className="bg-white">
-                                <SelectValue placeholder="" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            {
-                              Object
-                                .entries(WAITING_TIME_IN_HOURS)
-                                .filter(([key, _value]) => isNaN(Number(key)))
-                                .map(([key, value]) => (
-                                  <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
-                                )
+                  <Label htmlFor="waitingTimeInHours">Tempo de espera entre utilizações</Label>
+                  <FormField
+                    control={newVoucherConfigurationForm.control}
+                    name="waitingTimeInHours"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white">
+                              <SelectValue placeholder="" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                          {
+                            Object
+                              .entries(WAITING_TIME_IN_HOURS)
+                              .filter(([key, _value]) => isNaN(Number(key)))
+                              .map(([key, value]) => (
+                                <SelectItem key={uuid()} value={value.toString()}>{key}</SelectItem>
                               )
-                            }
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )
-                    }
+                            )
+                          }
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
                   />
                 </InputContainer>
                 </DetailsRow>
