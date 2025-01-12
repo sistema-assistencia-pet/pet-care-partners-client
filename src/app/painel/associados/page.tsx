@@ -37,6 +37,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import { PAGINATION_LIMIT } from '@/lib/constants'
 import {
   Select,
   SelectContent,
@@ -45,14 +46,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { sendRequest } from '@/lib/sendRequest'
-import { STATUS } from '@/lib/enums'
+import { ROLE, STATUS } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
-import { PAGINATION_LIMIT } from '@/lib/constants'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function MembersPage() {
   // --------------------------- PAGE SETUP ---------------------------
   const { push } = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
   interface IMember {
     id: string
     cpf: string
@@ -334,10 +336,15 @@ export default function MembersPage() {
     } else fetchMembers()
   }, [skip])
 
-  // Carrega lista de clientes quando a página carrega
+  // Se for ususário MASTER, carrega lista de clientes quando a página carrega
   useEffect(() => {
-    fetchClients()
-  }, [])
+    if (user?.roleId === ROLE.MASTER) {
+      fetchClients()
+    } else if (user?.roleId === ROLE.CLIENT_ADMIN) { // Se não, pré-seleciona cliente do usuário para criação de novos associados
+      console.log(user?.client?.id)
+      setClientIdSelected(user.client?.id ?? '')
+    }
+  }, [user])
 
   // --------------------------- RETURN ---------------------------
   return (
@@ -357,18 +364,22 @@ export default function MembersPage() {
                   className='flex flex-col gap-4'
                 >
                   <div className="flex flex-col space-y-1.5 bg-white">
-                      <select
-                        className='h-8 px-4 border rounded-md'
-                        value={clientIdSelected}
-                        onChange={({ target }) => setClientIdSelected(target.value)}
-                      >
-                        <option value="" />
-                        {
-                          clients.map(({ id, fantasyName }) => (
-                            <option key={uuid()} value={id}>{fantasyName}</option>
-                          ))
-                        }
-                      </select>
+                    {
+                      user?.roleId === ROLE.MASTER && (
+                        <select
+                          className='h-8 px-4 border rounded-md'
+                          value={clientIdSelected}
+                          onChange={({ target }) => setClientIdSelected(target.value)}
+                        >
+                          <option value="" />
+                          {
+                            clients.map(({ id, fantasyName }) => (
+                              <option key={uuid()} value={id}>{fantasyName}</option>
+                            ))
+                          }
+                        </select>
+                      )
+                    }
                   </div>
                   <AlertDialogFooter>
                     <div className='flex flex-col gap-4 justify-end'>

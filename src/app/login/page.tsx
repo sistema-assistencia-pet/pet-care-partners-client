@@ -18,11 +18,11 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import logo from '../../../public/logo-clube-rede-black-png.png'
 import { removeCpfMask } from '@/lib/utils'
 import { sendRequest } from '@/lib/sendRequest'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from "@/components/ui/use-toast"
+import { TicketPercent } from 'lucide-react'
 
 export default function LoginPage() {
   // ------------------ Destroy session cookie on login page load ------------------
@@ -86,8 +86,8 @@ export default function LoginPage() {
 
   const renderLogin = () => (
     <Card className="w-80">
-      <CardHeader className="flex flex-col justify-center text-center">
-        <Image className="rounded-md px-4 mb-2" src={logo} alt="Logo do Clube Rede" />
+      <CardHeader className="flex flex-col justify-center text-center items-center">
+        <TicketPercent color="#881ded" size={128}/>
         <CardDescription>Faça login para entrar no painel.</CardDescription>
       </CardHeader>
 
@@ -168,8 +168,8 @@ export default function LoginPage() {
 
   const renderRequestResetPassword = () => (
     <Card className="w-80">
-      <CardHeader className="flex flex-col justify-center text-center">
-        <Image className="rounded-md px-4 mb-2" src={logo} alt="Logo do Clube Rede" />
+      <CardHeader className="flex flex-col justify-center items-center text-center">
+        <TicketPercent color="#881ded" size={128}/>
         <CardDescription>Digite o CPF para requisitar uma nova senha.</CardDescription>
       </CardHeader>
 
@@ -257,8 +257,8 @@ export default function LoginPage() {
 
   const renderResetPassword = () => (
     <Card className="w-80">
-      <CardHeader className="flex flex-col justify-center text-center">
-        <Image className="rounded-md px-4 mb-2" src={logo} alt="Logo do Clube Rede" />
+      <CardHeader className="flex flex-col justify-center items-center text-center">
+        <TicketPercent color="#881ded" size={128}/>
         <CardDescription>Insira o Código de Redefinição e crie uma nova Senha.</CardDescription>
       </CardHeader>
 

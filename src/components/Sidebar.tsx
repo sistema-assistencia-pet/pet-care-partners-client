@@ -7,25 +7,26 @@ import { v4 as uuid } from 'uuid'
 
 import {
   Command,
-  CommandGroup,
   CommandItem,
   CommandList
 } from "@/components/ui/command"
-import logo from '../../public/logo-clube-rede-black-png.png'
-import { Handshake, Map, Settings2, Store, Users, CircleUserRound, TicketCheck } from 'lucide-react'
+import { Handshake, Map, Settings2, Store, Users, CircleUserRound, TicketCheck, TicketPercent } from 'lucide-react'
 import UserCard from './UserCard'
+import { useAuth } from '@/contexts/AuthContext'
+import { ROLE } from '@/lib/enums'
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { user } = useAuth()
 
   const commandListItems = [
-    { name: 'Associados', link: '/painel/associados', icon: <Users /> },
-    { name: 'Clientes', link: '/painel/clientes', icon: <Handshake /> },
-    { name: 'Estabelecimentos', link: '/painel/estabelecimentos', icon: <Store /> },
-    { name: 'Vouchers', link: '/painel/vouchers', icon: <TicketCheck /> },
-    { name: 'Categorias', link: '/painel/categorias', icon: <Settings2 /> },
-    { name: 'Cidades', link: '/painel/cidades', icon: <Map /> },
-    { name: 'Usuários', link: '/painel/usuarios', icon: <CircleUserRound /> }
+    { name: 'Associados', link: '/painel/associados', icon: <Users />, onlyMaster: false },
+    { name: 'Clientes', link: '/painel/clientes', icon: <Handshake />, onlyMaster: true },
+    { name: 'Estabelecimentos', link: '/painel/estabelecimentos', icon: <Store />, onlyMaster: true },
+    { name: 'Vouchers', link: '/painel/vouchers', icon: <TicketCheck />, onlyMaster: false },
+    { name: 'Categorias', link: '/painel/categorias', icon: <Settings2 />, onlyMaster: true },
+    { name: 'Cidades', link: '/painel/cidades', icon: <Map />, onlyMaster: true },
+    { name: 'Usuários', link: '/painel/usuarios', icon: <CircleUserRound />, onlyMaster: false }
   ]
 
   return (
@@ -35,7 +36,7 @@ export default function Sidebar() {
         <Command>
           <CommandList>
               {
-                commandListItems.map((commandItem) => (
+                commandListItems.map((commandItem) => !(user?.roleId === ROLE.CLIENT_ADMIN && commandItem.onlyMaster) && (
                   <Link href={commandItem.link} key={uuid()} passHref={true}>
                     <CommandItem className={`mb-4 pl-4 gap-4 ${pathname.includes(commandItem.link) && 'bg-accent'}`}>
                       {commandItem.icon}
@@ -48,7 +49,7 @@ export default function Sidebar() {
         </Command>
       </nav>
 
-      <Image className="rounded-md p-8" src={logo} alt="Logo do Clube Rede" priority />
+      <TicketPercent className="self-center" color="#881ded" size={128}/>
     </aside>
   )
 }

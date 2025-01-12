@@ -32,11 +32,13 @@ import { sendRequest } from '@/lib/sendRequest'
 import { ROLE } from '@/lib/enums'
 import { useToast } from '@/components/ui/use-toast'
 import { SELECT_DEFAULT_VALUE } from '@/lib/constants'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function RegisterUser() {
   // --------------------------- PAGE SETUP ---------------------------
   const { back } = useRouter()
   const { toast } = useToast()
+  const { user } = useAuth()
   
   // --------------------------- CREATE USER ---------------------------
   interface IUserToBeCreated {
@@ -179,10 +181,15 @@ export default function RegisterUser() {
   const selectedClientId = createUserForm.watch('clientId')
 
   // --------------------------- USE EFFECT ---------------------------
-  // Carrega lista de clientes quando a página carrega
+  // Se for ususário MASTER, carrega lista de clientes quando a página carrega
   useEffect(() => {
-    fetchClients()
-  }, [])
+    if (user?.roleId === ROLE.MASTER) {
+      fetchClients()
+    } else if (user?.roleId === ROLE.CLIENT_ADMIN) { // Se não, pré-seleciona cliente do usuário para criação de novos usuários
+      console.log(user?.client?.id)
+      createUserForm.setValue('clientId', user.client?.id ?? '')
+    }
+  }, [user])
 
   // Filtra lista de níveis de acesso de acordo com o cliente selecionado
   useEffect(() => {
@@ -241,36 +248,40 @@ export default function RegisterUser() {
                   && <span className="text-red-500 text-xs">{createUserForm.formState.errors.password.message}</span>
               }
             </InputContainer>
-            <InputContainer size="w-1/3">
-              <Label htmlFor="clientId">Cliente</Label>
-              <FormField
-                control={createUserForm.control}
-                name="clientId"
-                render={({ field }) => (
-                  <FormItem>
-                    <Select onValueChange={field.onChange} defaultValue={field.value === null ? SELECT_DEFAULT_VALUE : field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-white">
-                          <SelectValue placeholder="" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem key={uuid()} value={SELECT_DEFAULT_VALUE}>SEM CLIENTE - USUÁRIO DO SISTEMA</SelectItem>
-                        {
-                          clients.map((client) => (
-                            <SelectItem key={uuid()} value={client.id}>{client.fantasyName}</SelectItem>
-                          ))
-                        }
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-              {
-                createUserForm.formState.errors.clientId
-                  && <span className="text-red-500 text-xs">{createUserForm.formState.errors.clientId.message}</span>
-              }
-            </InputContainer>
+            {
+              user?.roleId === ROLE.MASTER && (
+                <InputContainer size="w-1/3">
+                  <Label htmlFor="clientId">Cliente</Label>
+                  <FormField
+                    control={createUserForm.control}
+                    name="clientId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select onValueChange={field.onChange} defaultValue={field.value === null ? SELECT_DEFAULT_VALUE : field.value}>
+                          <FormControl>
+                            <SelectTrigger className="bg-white">
+                              <SelectValue placeholder="" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem key={uuid()} value={SELECT_DEFAULT_VALUE}>SEM CLIENTE - USUÁRIO DO SISTEMA</SelectItem>
+                            {
+                              clients.map((client) => (
+                                <SelectItem key={uuid()} value={client.id}>{client.fantasyName}</SelectItem>
+                              ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )}
+                  />
+                  {
+                    createUserForm.formState.errors.clientId
+                      && <span className="text-red-500 text-xs">{createUserForm.formState.errors.clientId.message}</span>
+                  }
+                </InputContainer>
+              )
+            }
           </DetailsRow>
 
           <Button className="my-4" disabled={!createUserForm.formState.isValid} type='submit'>

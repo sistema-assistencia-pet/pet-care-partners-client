@@ -566,9 +566,13 @@ export default function VouchersPage() {
       title="Vouchers"
     >
       <div className='flex flex-row'>
-        <Button type="button" onClick={() => push('/painel/vouchers/cadastrar-voucher')}>
-          Cadastrar voucher
-        </Button>
+        {
+          user?.roleId === ROLE.MASTER && (
+            <Button type="button" onClick={() => push('/painel/vouchers/cadastrar-voucher')}>
+              Cadastrar voucher
+            </Button>
+          )
+        }
       </div>
 
       {/* Filter */}
@@ -585,28 +589,32 @@ export default function VouchersPage() {
           </div>
 
           {/* Show all or filter by client */}
-          <div className="flex flex-col space-y-1.5">
-            <Label className='bg-transparent text-sm' htmlFor="onlyMine">Exibir</Label>
-            <FormField
-              control={filterForm.control}
-              name="onlyMine"
-              render={({ field }) => (
-                <FormItem>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="w-36 bg-white" disabled={!user?.client?.id}>
-                        <SelectValue placeholder="Exibir" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="false">Todos</SelectItem>
-                      <SelectItem value="true">Somente meus</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          </div>
+          {
+            user?.roleId === ROLE.CLIENT_ADMIN && (
+              <div className="flex flex-col space-y-1.5">
+                <Label className='bg-transparent text-sm' htmlFor="onlyMine">Exibir</Label>
+                <FormField
+                  control={filterForm.control}
+                  name="onlyMine"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="w-36 bg-white" disabled={!user?.client?.id}>
+                            <SelectValue placeholder="Exibir" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="false">Todos</SelectItem>
+                          <SelectItem value="true">Somente meus</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )
+          }
 
           {/* Category */}
           <div className="flex flex-col space-y-1.5">

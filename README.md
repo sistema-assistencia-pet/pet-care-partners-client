@@ -1,5 +1,5 @@
-# clube-rede-client
-Admin panel for Clube Rede project.
+# vouchers-client
+Admin panel for vouchers project.
 
 ## Getting Started
 
