@@ -1,5 +1,5 @@
 # vouchers-client
-Admin panel for vouchers project.
+Admin panel for vouchers management system project.
 
 ## Getting Started
 
