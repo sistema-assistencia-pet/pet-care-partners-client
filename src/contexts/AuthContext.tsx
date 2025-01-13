@@ -10,7 +10,7 @@ import { SessionData, UserLogged } from '@/lib/interfaces'
 
 interface AuthContextType {
   user: UserLogged | null,
-  signIn: ({ cpf, password }: { cpf: string, password: string } ) => Promise<void>
+  signIn: ({ cnpj, password }: { cnpj: string, password: string } ) => Promise<void>
 }
 
 const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_SESSION_COOKIE_NAME as string
@@ -37,11 +37,11 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     } catch (error) {}
   }, [])
 
-  async function signIn({ cpf, password }: { cpf: string, password: string }): Promise<void> {
+  async function signIn({ cnpj, password }: { cnpj: string, password: string }): Promise<void> {
     const response = await sendRequest<{ user: UserLogged }>({
-      endpoint: '/auth/user/login',
+      endpoint: '/auth/partner/login',
       method: 'POST',
-      data: { cpf: cpf.trim(), password: password.trim() },
+      data: { cnpj: cnpj.trim(), password: password.trim() },
     })
 
     if(response.error) throw new Error(response.message)
