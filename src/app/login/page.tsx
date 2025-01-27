@@ -23,7 +23,7 @@ import { TicketPercent } from 'lucide-react'
 
 export default function LoginPage() {
   // ------------------ Destroy session cookie on login page load ------------------
-  const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_GIFT2ME_PARTNER_SESSION_COOKIE_NAME as string
+  const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_EXCLUSIVEPASS_PARTNER_SESSION_COOKIE_NAME as string
 
   useEffect(
     () => {
@@ -78,7 +78,7 @@ export default function LoginPage() {
       <Card className="w-80">
         <CardHeader className="flex flex-col justify-center text-center items-center">
           <TicketPercent color="#881ded" size={128}/>
-          <span className="text-center text-2xl font-bold text-primary mb-4">GIFT 2 ME</span>
+          <span className="text-center text-2xl font-bold text-primary mb-4">Exclusive Pass</span>
           <CardDescription>Bem vindo, parceiro! Faça login para entrar no painel e validar nossos vouchers.</CardDescription>
         </CardHeader>
 

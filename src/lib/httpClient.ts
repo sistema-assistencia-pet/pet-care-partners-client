@@ -7,10 +7,10 @@ import { endSession } from './auth'
 import { UserLogged } from '@/lib/interfaces'
 
 export const httpClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_GIFT2ME_API_BASE_URL
+  baseURL: process.env.NEXT_PUBLIC_EXCLUSIVEPASS_API_BASE_URL
 })
 
-const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_GIFT2ME_PARTNER_SESSION_COOKIE_NAME as string
+const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_EXCLUSIVEPASS_PARTNER_SESSION_COOKIE_NAME as string
 
 const cookies = parseCookies()
 

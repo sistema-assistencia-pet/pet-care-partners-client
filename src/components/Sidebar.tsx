@@ -40,7 +40,7 @@ export default function Sidebar() {
         </Command>
       </nav>
 
-      <span className="text-center text-2xl font-bold text-primary">GIFT 2 ME</span>
+      <span className="text-center text-2xl font-bold text-primary">Exclusive Pass</span>
 
       <TicketPercent className="self-center" color="#881ded" size={128}/>
     </aside>

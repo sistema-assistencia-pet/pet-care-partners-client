@@ -13,7 +13,7 @@ interface AuthContextType {
   signIn: ({ cnpj, password }: { cnpj: string, password: string } ) => Promise<void>
 }
 
-const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_GIFT2ME_PARTNER_SESSION_COOKIE_NAME as string
+const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_EXCLUSIVEPASS_PARTNER_SESSION_COOKIE_NAME as string
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
