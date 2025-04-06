@@ -6,10 +6,10 @@ import { redirect } from 'next/navigation'
 
 import { AccessTokenPayload, SessionData, UserLogged } from './interfaces'
 
-const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_EXCLUSIVEPASS_PARTNER_SESSION_COOKIE_NAME as string
+const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_PET_CARE_PARTNER_SESSION_COOKIE_NAME as string
 
 export async function openAccessToken(accessToken: string): Promise<AccessTokenPayload> {
-  const secret = new TextEncoder().encode(process.env.EXCLUSIVEPASS_JWT_SECRET)
+  const secret = new TextEncoder().encode(process.env.PET_CARE_JWT_SECRET)
   const { payload }: { payload: AccessTokenPayload } = await jwtVerify(accessToken, secret)
 
   return payload

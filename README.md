@@ -1,5 +1,5 @@
-# vouchers-client
-Admin panel for vouchers management system project.
+# pet-care-partners-client
+Partners voucher validation panel for Pet Care management system project.
 
 ## Getting Started
 
@@ -12,4 +12,4 @@ npm run dev
 # or
 yarn, pnpm or bun alterantives
 ```
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the project.
+Open [http://localhost:8002](http://localhost:8002) with your browser to see the project.

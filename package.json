@@ -1,6 +1,7 @@
 {
-  "name": "client",
-  "version": "0.1.0",
+  "name": "pet-care-partners-client",
+  "version": "1.0.0",
+  "description": "Pet Care partners voucher validation panel",
   "private": true,
   "scripts": {
     "dev": "next dev",

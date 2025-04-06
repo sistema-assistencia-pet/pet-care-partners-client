@@ -23,7 +23,7 @@ import { TicketPercent } from 'lucide-react'
 
 export default function LoginPage() {
   // ------------------ Destroy session cookie on login page load ------------------
-  const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_EXCLUSIVEPASS_PARTNER_SESSION_COOKIE_NAME as string
+  const SESSION_COOKIE_NAME = process.env.NEXT_PUBLIC_PET_CARE_PARTNER_SESSION_COOKIE_NAME as string
 
   useEffect(
     () => {
