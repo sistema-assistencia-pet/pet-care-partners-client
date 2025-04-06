@@ -8,8 +8,8 @@ import { Toaster } from '@/components/ui/toaster'
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Exclusive Pass - Sistema",
-  description: "Painel admin do sistema Exclusive Pass",
+  title: "Pet Care - Sistema",
+  description: "Painel de validação de vouchers do sistema Pet Care",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

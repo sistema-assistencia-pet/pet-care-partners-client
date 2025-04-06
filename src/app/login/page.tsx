@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from "@/components/ui/use-toast"
-import { TicketPercent } from 'lucide-react'
+import { PawPrint } from 'lucide-react'
 
 export default function LoginPage() {
   // ------------------ Destroy session cookie on login page load ------------------
@@ -77,8 +77,8 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center p-24">
       <Card className="w-80">
         <CardHeader className="flex flex-col justify-center text-center items-center">
-          <TicketPercent color="#881ded" size={128}/>
-          <span className="text-center text-2xl font-bold text-primary mb-4">Exclusive Pass</span>
+          <PawPrint color="#4f1381" size={128}/>
+          <span className="text-center text-2xl font-bold text-secondary mb-4">Pet Care</span>
           <CardDescription>Bem vindo, parceiro! Faça login para entrar no painel e validar nossos vouchers.</CardDescription>
         </CardHeader>
 

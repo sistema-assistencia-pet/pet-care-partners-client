@@ -9,9 +9,8 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command"
-import { TicketCheck, TicketPercent } from 'lucide-react'
+import { PawPrint, TicketCheck } from 'lucide-react'
 import UserCard from './UserCard'
-import { useAuth } from '@/contexts/AuthContext'
 
 export default function Sidebar() {
   const pathname = usePathname()
@@ -40,9 +39,9 @@ export default function Sidebar() {
         </Command>
       </nav>
 
-      <span className="text-center text-2xl font-bold text-primary">Exclusive Pass</span>
+      <span className="text-center text-2xl font-bold text-secondary mb-4">Pet Care</span>
 
-      <TicketPercent className="self-center" color="#881ded" size={128}/>
+      <PawPrint className="self-center" color="#4f1381" size={96}/>
     </aside>
   )
 }

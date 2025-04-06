@@ -20,7 +20,7 @@ export default function UserCard() {
 
   return (
     <div className="flex items-center justify-between gap-4 border rounded-md p-2 w-52 bg-slate-50">
-      <div className="avatar rounded-full min-h-12 min-w-12 bg-[#881ced] text-white font-bold flex items-center justify-center text-xl">
+      <div className="avatar rounded-full min-h-12 min-w-12 bg-[#43963c] text-white font-bold flex items-center justify-center text-xl">
         <span>
           {userName.charAt(0)}
         </span>
